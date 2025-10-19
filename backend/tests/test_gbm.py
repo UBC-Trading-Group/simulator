@@ -31,5 +31,5 @@ class TestGeometricBrownianMotionAssetSimulator(TestCase):
         sample_var = np.var(prices)
 
         # # allow 10% tolerance
-        # self.assertTrue(np.isclose(sample_mean, expected_mean, rtol=0.1))
-        # self.assertTrue(np.isclose(sample_var, expected_var, rtol=0.1))
+        self.assertTrue(np.isclose(sample_mean, expected_mean, rtol=0.1))
+        self.assertTrue(np.isclose(sample_var, expected_var, rtol=0.1))
