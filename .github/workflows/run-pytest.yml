@@ -41,12 +41,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev,test]
 
-      - name: Create .env file for CI
-        working-directory: backend
-        run: |
-          echo "DATABASE_URL=postgresql://user:password@localhost:5432/testdb" > .env
+      # - name: Create .env file for CI
+      #   working-directory: backend
+      #   run: |
+      #     echo "DATABASE_URL=postgresql://user:password@localhost:5432/testdb" > .env
 
       - name: Run pytest with coverage
         working-directory: backend
+        env: DATABASE_URL=postgresql://user:password@localhost:5432/testdb
         run: |
           pytest --maxfail=1 --disable-warnings --cov=app --cov-report=term-missing
