@@ -10,7 +10,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://user:password@localhost/trading_simulator"
+    DATABASE_URL: str = "postgresql://user:password@postgres/trading_simulator"
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
