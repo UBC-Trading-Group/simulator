@@ -13,10 +13,10 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
           POSTGRES_DB: testdb
         ports:
           - 5432:5432
@@ -35,12 +35,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            sleep 2
-          done
-
       - name: Install dependencies
         working-directory: backend
         run: |
@@ -50,6 +44,6 @@ jobs:
       - name: Run pytest with coverage
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/testdb
+          DATABASE_URL: postgresql://user:password@postgres:5432/testdb
         run: |
           pytest --maxfail=1 --disable-warnings --cov=app --cov-report=term-missing
