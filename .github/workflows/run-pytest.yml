@@ -35,6 +35,12 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            sleep 2
+          done
+
       - name: Install dependencies
         working-directory: backend
         run: |
