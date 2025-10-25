@@ -55,5 +55,14 @@ class OrderBook:
         if highest_bid and lowest_ask:
             return (highest_bid["price"] + lowest_ask["price"]) / 2
         return None
+
+    def match_order(self, order):
+        """
+        Matches buy with corresponding sell order, or sell with corresponding buy order
+        
+        TODO
+        Matching should happen based on proximity to mid price
+        Return status whether matching was successful
+        """
         
             
