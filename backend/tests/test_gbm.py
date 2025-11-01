@@ -1,5 +1,7 @@
 from unittest import TestCase
+
 import numpy as np
+
 from app.services.gbm import GeometricBrownianMotionAssetSimulator
 
 
@@ -16,7 +18,9 @@ class TestGeometricBrownianMotionAssetSimulator(TestCase):
         # how large the sample pool is
         self.n_samples = 100000
 
-        self.gbmas = GeometricBrownianMotionAssetSimulator(self.S0, self.mu, self.sigma, self.dt)
+        self.gbmas = GeometricBrownianMotionAssetSimulator(
+            self.S0, self.mu, self.sigma, self.dt
+        )
 
     def test_gbm_mean_var(self):
         prices = [self.S0]

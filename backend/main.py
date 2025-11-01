@@ -13,6 +13,7 @@ from sqlmodel import SQLModel
 
 from app.api.api_v1.api import api_router
 from app.core.config import settings
+from app.core.logging import setup_logging
 from app.db.database import engine
 from app.models import (
     Bot,
@@ -27,6 +28,9 @@ from app.models import (
     User,
 )
 from dependencies import news_engine, price_engine
+
+# Setup logging
+setup_logging()
 
 app = FastAPI(
     title="Trading Simulator API",

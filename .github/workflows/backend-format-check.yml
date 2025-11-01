@@ -1,0 +1,43 @@
+name: Backend Format Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-format-check.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-format-check.yml'
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort
+
+      - name: Check code formatting with Black
+        working-directory: backend
+        run: |
+          black --check --diff .
+
+      - name: Check import sorting with isort
+        working-directory: backend
+        run: |
+          isort --check-only --diff .
+

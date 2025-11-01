@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     MAX_POSITION_SIZE: float = 1000000.0
     SESSION_DURATION_MINUTES: int = 60
 
+    # Logging
+    LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    LOG_FILE: Optional[str] = None  # Set to None to disable file logging
+
     class Config:
         env_file = ".env"
         case_sensitive = True

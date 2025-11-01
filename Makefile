@@ -1,6 +1,6 @@
 # Trading Simulator Backend - Docker Commands
 
-.PHONY: help build up down logs shell test clean dev
+.PHONY: help build up down logs shell test clean dev format
 
 # Default target
 help: ## Show this help message
@@ -62,6 +62,11 @@ test: ## Run tests
 
 test-cov: ## Run tests with coverage
 	docker-compose exec api uv run pytest --cov=app
+
+# Formatting commands
+format: ## Format code with isort and black
+	cd backend && uv run isort .
+	cd backend && uv run black .
 
 # Utility commands
 clean: ## Clean up Docker resources

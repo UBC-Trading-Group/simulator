@@ -245,12 +245,12 @@ class TestOrderBook(TestCase):
 
         # Verify the results
         self.assertEqual(status, OrderStatus.FILLED)
-        self.assertEqual(remaining_qty, 0) # all filled
-        
+        self.assertEqual(remaining_qty, 0)  # all filled
+
         # here, we take the worst ask first, so only 101 should be left
         self.assertEqual(len(self.order_book.sells), 1)
         self.assertEqual(self.order_book.sells[0]["quantity"], 1)
         self.assertEqual(self.order_book.sells[0]["price"], 101)
-        
+
         # nothing is added to the buys
         self.assertEqual(len(self.order_book.buys), 0)

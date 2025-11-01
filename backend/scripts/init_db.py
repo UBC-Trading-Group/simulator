@@ -9,9 +9,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlmodel import Session, select
 
+from app.core.logging import get_logger, setup_logging
 from app.core.security import get_password_hash
 from app.db.database import engine
 from app.models.user import User
+
+setup_logging()
+logger = get_logger(__name__)
 
 
 def init_database():
@@ -22,7 +26,7 @@ def init_database():
         admin_user = session.exec(statement).first()
 
         if admin_user:
-            print("Admin user already exists!")
+            logger.info("Admin user already exists")
             return
 
         # Create admin user
@@ -36,9 +40,7 @@ def init_database():
 
         session.add(admin_user)
         session.commit()
-        print("Admin user created successfully!")
-        print("Username: admin")
-        print("Password: pass")
+        logger.info("Admin user created successfully - username: admin, password: pass")
 
 
 if __name__ == "__main__":

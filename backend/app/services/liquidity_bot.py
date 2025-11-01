@@ -1,18 +1,27 @@
-import random
 import json
+import random
+
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 class LiquidityBot:
     # TODO: fit in highest bid + lowest ask / 2 to mid price
     def __init__(self, instrument_id, mid_price, inventory):
         self.instrument_id = instrument_id
-        self.mid_price = mid_price 
-        self.inventory = inventory 
+        self.mid_price = mid_price
+        self.inventory = inventory
 
-        self.base_spread = 0.1 # per suggestion
-        self.stress_coefficient = random.uniform(0.05, 0.15) # simulates investors in the market
-        self.inventory_coefficient = random.uniform(0.005, 0.05) # how risk-averse the bot is
-        self.quote_noise_sigma = random.uniform(0, 0.05) # per DC discussion
-    
+        self.base_spread = 0.1  # per suggestion
+        self.stress_coefficient = random.uniform(
+            0.05, 0.15
+        )  # simulates investors in the market
+        self.inventory_coefficient = random.uniform(
+            0.005, 0.05
+        )  # how risk-averse the bot is
+        self.quote_noise_sigma = random.uniform(0, 0.05)  # per DC discussion
+
     # TODO: adjust with bid and ask externally
     def adjust_mid_price(self, mid_price):
         self.mid_price = mid_price
@@ -48,7 +57,7 @@ class LiquidityBot:
 
     def generate_order_book(self, drift_term, levels=3):
         spread = self.compute_spread(drift_term)
-        
+
         # Initial bid and ask at level 0
         bid, ask = self.compute_quotes(spread)
 
@@ -67,14 +76,17 @@ class LiquidityBot:
             "type": "book_snapshot",
             "instrumentId": self.instrument_id,
             "bids": bids,
-            "asks": asks
+            "asks": asks,
         }
 
         return book_snapshot
 
+
 # For testing only
 if __name__ == "__main__":
-    bot = LiquidityBot(instrument_id="META", mid_price=180.0, inventory=random.randint(-5, 5))
+    bot = LiquidityBot(
+        instrument_id="META", mid_price=180.0, inventory=random.randint(-5, 5)
+    )
     drift_term = random.uniform(-1, 1)
     snapshot = bot.generate_order_book(drift_term)
-    print(json.dumps(snapshot, indent=2))
+    logger.info(f"Generated order book snapshot: {json.dumps(snapshot)}")

@@ -1,6 +1,5 @@
-
 class UserState:
-    """ Example of a portfolio
+    """Example of a portfolio
     "ticker": [(qty, price), (qty, price)]
 
     {
@@ -13,9 +12,13 @@ class UserState:
         self.user_id = user_id
         self.cash = 0
 
-        self.portfolio = [] # contains user's portfolio
-        self.unfulfilled_trades = [] # orders that have not been fulfilled or position is not closed
-        self.fulfilled_trades = []  # orders that have been fulfilled or position is closed
+        self.portfolio = []  # contains user's portfolio
+        self.unfulfilled_trades = (
+            []
+        )  # orders that have not been fulfilled or position is not closed
+        self.fulfilled_trades = (
+            []
+        )  # orders that have been fulfilled or position is closed
 
         self.total_shares = 0
         self.prev_avg_price = 0
@@ -44,7 +47,7 @@ class UserState:
             raise ValueError(f"Ticker {ticker} is not found!")
 
         for buy_qty, buy_price in lots:
-            if (remaining >= buy_qty):
+            if remaining >= buy_qty:
                 lots.pop(0)
                 remaining -= buy_qty
                 idx += 1
@@ -54,7 +57,8 @@ class UserState:
 
         if remaining > 0:
             raise ValueError(
-                f"Not enough shares to sell: tried {sell_qty}, only sold {sell_qty - remaining}")
+                f"Not enough shares to sell: tried {sell_qty}, only sold {sell_qty - remaining}"
+            )
 
         # TODO calculate realized pnl here
 
@@ -66,8 +70,7 @@ class UserState:
             return 0
 
         avg_price = (
-            (self.prev_avg_price * prev_quantity) +
-            (order_price * order_quantity)
+            (self.prev_avg_price * prev_quantity) + (order_price * order_quantity)
         ) / self.total_shares
 
         self.prev_avg_price = avg_price

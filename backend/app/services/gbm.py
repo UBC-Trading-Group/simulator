@@ -1,5 +1,6 @@
-import numpy as np
 import math
+
+import numpy as np
 
 
 class GeometricBrownianMotionAssetSimulator:
@@ -23,9 +24,11 @@ class GeometricBrownianMotionAssetSimulator:
         # TODO: calculate drift
         drift = 0
 
-        next_price = self.current_price * np.exp((self.mean + drift - self.variance / 2) * self.delta +
-                                                 self.sigma * e * math.sqrt(self.delta))
-        
+        next_price = self.current_price * np.exp(
+            (self.mean + drift - self.variance / 2) * self.delta
+            + self.sigma * e * math.sqrt(self.delta)
+        )
+
         self.current_price = next_price
         self.time += self.delta
         return next_price
