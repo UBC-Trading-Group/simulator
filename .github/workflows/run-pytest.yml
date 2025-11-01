@@ -3,8 +3,12 @@ name: Run Pytest on Pull Requests
 on:
   pull_request:
     branches: ["main"]
+    paths:
+      - "backend/**"
   push:
     branches: ["main"]
+    paths:
+      - "backend/**"
 
 jobs:
   test:
