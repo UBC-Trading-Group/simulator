@@ -38,6 +38,7 @@ class TestOrderBook(TestCase):
 
     def test_order_insertion_start(self):
         """Test inserting buy orders at the start of the order book"""
+        assert False
         # Insert buy orders in descending order (should be inserted at start)
         self.order_book.add_order(self.buy_order_101.copy())
         self.order_book.add_order(self.buy_order_100.copy())
@@ -245,12 +246,12 @@ class TestOrderBook(TestCase):
 
         # Verify the results
         self.assertEqual(status, OrderStatus.FILLED)
-        self.assertEqual(remaining_qty, 0) # all filled
-        
+        self.assertEqual(remaining_qty, 0)  # all filled
+
         # here, we take the worst ask first, so only 101 should be left
         self.assertEqual(len(self.order_book.sells), 1)
         self.assertEqual(self.order_book.sells[0]["quantity"], 1)
         self.assertEqual(self.order_book.sells[0]["price"], 101)
-        
+
         # nothing is added to the buys
         self.assertEqual(len(self.order_book.buys), 0)
