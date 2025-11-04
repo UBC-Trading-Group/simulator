@@ -1,6 +1,7 @@
 """
 Trading endpoints (example of protected endpoints)
 """
+from app.services.trading import TradingService
 
 from typing import List
 
@@ -31,7 +32,7 @@ def get_portfolio(
             {"symbol": "AAPL", "quantity": 10, "value": 1500.0},
             {"symbol": "GOOGL", "quantity": 5, "value": 5000.0},
         ],
-        "cash": 3500.0,
+        "cash": 3500.0, "lmao": "lmao"
     }
 
 
