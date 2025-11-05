@@ -27,7 +27,8 @@ jobs:
     needs: detect
     if: needs.detect.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
     services:
       postgres:
         image: postgres:15
@@ -45,32 +46,46 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
+          python-version: "3.11"
+
       - name: Install dependencies
         working-directory: backend
         run: |
           uv sync --extra test --extra dev
-      
-      - name: Check formatting with black
+
+      # - name: Check formatting with black
+      #   working-directory: backend
+      #   run: |
+      #     uv run black --check .
+
+      - name: Auto-format with Black
         working-directory: backend
-        run: |
-          uv run black --check .
-      
+        run: uv run black .
+
+      - name: Commit and push formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "style(backend): auto-format with Black"
+          branch: ${{ github.head_ref || github.ref_name }}
+          file_pattern: backend/**
+
       - name: Check import sorting with isort
         working-directory: backend
         run: |
           uv run isort --check-only .
-      
+
       - name: Run tests
         working-directory: backend
         env:
@@ -82,7 +97,7 @@ jobs:
     needs: detect
     if: needs.detect.outputs.frontend == 'true'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Frontend checks skipped (auto-pass)
         run: echo "Frontend CI checks are not added yet - passing"
