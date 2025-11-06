@@ -116,7 +116,7 @@
   color: #666;
 }
 .widget-close:hover { color: #000; }
-.widget-body { height: calc(100% - 41px); overflow: auto; }
+.widget-body { height: calc(100% - 41px - 24px); padding: 12px; overflow: auto; }
 
 /* Login/Register */
 .auth-shell {

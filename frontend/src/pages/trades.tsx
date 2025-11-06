@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PriceChart from "../components/chart";
+import LeaderboardWidget from "../components/LeaderboardWidget";
+import PortfolioWidget from "../components/PortfolioWidget";
+import NewsFeedWidget from "../components/NewsFeedWidget";
+import StocksWidget from "../components/StocksWidget";
+import OrderbookWidget from "../components/OrderbookWidget";
+import BuySellWidget from "../components/BuySellWidget";
 
 type WidgetType =
   | "Leaderboard"
@@ -114,12 +120,13 @@ function WidgetBody({ type }: { type: WidgetType }) {
   if (type === "Price Chart") {
     return <PriceChart />;
   }
-  // Temporary placeholder bodies for non-implemented widgets
-  return (
-    <div style={{ padding: 12 }}>
-      {type} coming soon...
-    </div>
-  );
+  if (type === "Leaderboard") return <LeaderboardWidget />;
+  if (type === "Portfolio") return <PortfolioWidget />;
+  if (type === "News Feed") return <NewsFeedWidget />;
+  if (type === "Stocks") return <StocksWidget />;
+  if (type === "Orderbook") return <OrderbookWidget />;
+  if (type === "Buy/Sell Widget") return <BuySellWidget />;
+  return null;
 }
 
 function WidgetWindow(props: {
