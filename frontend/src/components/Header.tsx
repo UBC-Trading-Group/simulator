@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import LatencyPill from './LatencyPill';
-import logoUrl from '../assets/logo.png';
+import logoUrl from '/logo.png';
 
 function Header() {
   const navigate = useNavigate();

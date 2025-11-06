@@ -1,24 +1,202 @@
-import PriceChart from "../components/chart"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PriceChart from "../components/chart";
+
+type WidgetType =
+  | "Leaderboard"
+  | "Portfolio"
+  | "News Feed"
+  | "Stocks"
+  | "Orderbook"
+  | "Buy/Sell Widget"
+  | "Price Chart";
+
+interface WidgetModel {
+  id: string;
+  type: WidgetType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  z: number;
+}
+
+function useZIndex() {
+  const counter = useRef(10);
+  const next = () => {
+    counter.current += 1;
+    return counter.current;
+  };
+  return { next };
+}
 
 function TradesPage() {
+  const [widgets, setWidgets] = useState<WidgetModel[]>([]);
+  const { next } = useZIndex();
+
+  const widgetTitles: Record<WidgetType, string> = useMemo(
+    () => ({
+      "Leaderboard": "Leaderboard",
+      "Portfolio": "Portfolio",
+      "News Feed": "News Feed",
+      "Stocks": "Stocks",
+      "Orderbook": "Orderbook",
+      "Buy/Sell Widget": "Buy / Sell",
+      "Price Chart": "Price Chart",
+    }),
+    []
+  );
+
+  const addWidget = useCallback((type: WidgetType) => {
+    setWidgets(prev => {
+      const offset = prev.length * 16;
+      const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const base: WidgetModel = {
+        id,
+        type,
+        x: 120 + (offset % 180),
+        y: 60 + (offset % 120),
+        width: 420,
+        height: 280,
+        z: next(),
+      };
+      return [...prev, base];
+    });
+  }, [next]);
+
+  const closeWidget = useCallback((id: string) => {
+    setWidgets(prev => prev.filter(w => w.id !== id));
+  }, []);
+
+  const updateWidget = useCallback((id: string, partial: Partial<WidgetModel>) => {
+    setWidgets(prev => prev.map(w => (w.id === id ? { ...w, ...partial } : w)));
+  }, []);
+
   return (
     <div className="trades">
       <aside className="overlay-aside">
         <h3 className="overlay-title">Widgets</h3>
         <ul className="widgets-list">
-          <li>Leaderboard</li>
-          <li>Portfolio</li>
-          <li>News Feed</li>
-          <li>Stocks</li>
-          <li>Orderbook</li>
-          <li>Buy/Sell Widget</li>
+          <li onClick={() => addWidget("Price Chart")}>Price Chart</li>
+          <li onClick={() => addWidget("Buy/Sell Widget")}>Buy/Sell Widget</li>
+          <li onClick={() => addWidget("Portfolio")}>Portfolio</li>
+          <li onClick={() => addWidget("Leaderboard")}>Leaderboard</li>
+          <li onClick={() => addWidget("News Feed")}>News Feed</li>
+          <li onClick={() => addWidget("Stocks")}>Stocks</li>
+          <li onClick={() => addWidget("Orderbook")}>Orderbook</li>
         </ul>
       </aside>
-      
-      <PriceChart />
-      <div className="trades-stage" />
+
+      <div className="trades-stage">
+        {widgets.map(w => (
+          <WidgetWindow
+            key={w.id}
+            id={w.id}
+            title={widgetTitles[w.type]}
+            x={w.x}
+            y={w.y}
+            width={w.width}
+            height={w.height}
+            z={w.z}
+            onFocus={() => updateWidget(w.id, { z: next() })}
+            onMove={(x, y) => updateWidget(w.id, { x, y })}
+            onResize={(width, height) => updateWidget(w.id, { width, height })}
+            onClose={() => closeWidget(w.id)}
+          >
+            <WidgetBody type={w.type} />
+          </WidgetWindow>
+        ))}
+      </div>
     </div>
-  )
+  );
+}
+
+function WidgetBody({ type }: { type: WidgetType }) {
+  if (type === "Price Chart") {
+    return <PriceChart />;
+  }
+  // Temporary placeholder bodies for non-implemented widgets
+  return (
+    <div style={{ padding: 12 }}>
+      {type} coming soon...
+    </div>
+  );
+}
+
+function WidgetWindow(props: {
+  id: string;
+  title: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  z: number;
+  onMove: (x: number, y: number) => void;
+  onResize: (w: number, h: number) => void;
+  onClose: () => void;
+  onFocus: () => void;
+  children: React.ReactNode;
+}) {
+  const { id, title, x, y, width, height, z, onMove, onResize, onClose, onFocus, children } = props;
+  const ref = useRef<HTMLDivElement | null>(null);
+  const dragging = useRef(false);
+  const dragOffset = useRef({ dx: 0, dy: 0 });
+
+  const onHeaderMouseDown = (e: React.MouseEvent) => {
+    if (!ref.current) return;
+    dragging.current = true;
+    dragOffset.current = { dx: e.clientX - x, dy: e.clientY - y };
+    onFocus();
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!dragging.current) return;
+    const nx = e.clientX - dragOffset.current.dx;
+    const ny = e.clientY - dragOffset.current.dy;
+    const clampedX = Math.max(0, nx);
+    const clampedY = Math.max(0, ny);
+    onMove(clampedX, clampedY);
+  };
+
+  const onMouseUp = () => {
+    dragging.current = false;
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+  };
+
+  // Track resizes with ResizeObserver so sizes persist
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const ro = new ResizeObserver(entries => {
+      const entry = entries[0];
+      const cr = entry.contentRect;
+      onResize(Math.round(cr.width), Math.round(cr.height));
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [onResize]);
+
+  return (
+    <div
+      ref={el => { ref.current = el; }}
+      className="widget-win"
+      style={{ left: x, top: y, width, height, zIndex: z }}
+      onMouseDown={onFocus}
+      data-id={id}
+    >
+      <div className="widget-header" onMouseDown={onHeaderMouseDown}>
+        <span className="widget-title">{title}</span>
+        <button className="widget-close" onClick={onClose} aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div className="widget-body">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export default TradesPage

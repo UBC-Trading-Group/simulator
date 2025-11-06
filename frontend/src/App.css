@@ -75,11 +75,48 @@
   min-height: calc(100vh - var(--header-height));
   border-radius: 10px;
   margin-right: 16px;
+  position: relative; /* stage for absolute-positioned widgets */
 }
 
 /* Hide text when collapsed */
 .overlay-aside:not(:hover) .overlay-title,
 .overlay-aside:not(:hover) .widgets-list { opacity: 0; pointer-events: none; }
+
+/* Make overlay list items clickable */
+.widgets-list li { cursor: pointer; }
+.widgets-list li:hover { text-decoration: underline; }
+
+/* Floating widget window */
+.widget-win {
+  position: absolute;
+  background: var(--color-white);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
+  resize: both;
+}
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  cursor: move;
+  user-select: none;
+  font-weight: 700;
+}
+.widget-title { color: #111; }
+.widget-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+}
+.widget-close:hover { color: #000; }
+.widget-body { height: calc(100% - 41px); overflow: auto; }
 
 /* Login/Register */
 .auth-shell {
