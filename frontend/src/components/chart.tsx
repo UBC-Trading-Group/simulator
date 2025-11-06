@@ -80,11 +80,11 @@ const LiveLineChart: React.FC = () => {
   };
 
   return (
-    <div className="p-4 bg-white rounded-xl shadow-md">
+    <div className="p-4 bg-white rounded-xl shadow-md" style={{ height: '100%', width: '100%' }}>
       {tickers.length > 0 ? (
         <ReactECharts
           option={option}
-          style={{ height: "40rem", width: "100%" }}
+          style={{ height: "100%", width: "100%" }}
           notMerge={true}
           lazyUpdate={true}
         />
