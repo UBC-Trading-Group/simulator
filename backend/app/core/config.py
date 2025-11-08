@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     LOG_FILE: Optional[str] = None  # Set to None to disable file logging
 
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379"
+
     class Config:
         env_file = ".env"
         case_sensitive = True

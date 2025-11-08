@@ -1,5 +1,6 @@
-# import redis.asyncio as redis
+import redis.asyncio as redis
 
+from app.core.config import settings
 from app.services.leaderboard import Leaderboard
 from app.services.news import NewsShockSimulator
 from app.services.order_book import OrderBook
@@ -11,8 +12,8 @@ For dependency injections, these are all singletons
 
 news_engine = NewsShockSimulator()
 price_engine = PriceEngine(news_engine=news_engine)
-# redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=False)
-# leaderboard = Leaderboard(redis_client)
+redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=False)
+leaderboard = Leaderboard(redis_client)
 order_book = OrderBook()
 
 
@@ -24,8 +25,8 @@ def get_news_engine() -> NewsShockSimulator:
     return news_engine
 
 
-# def get_leaderboard() -> Leaderboard:
-#    return leaderboard
+def get_leaderboard() -> Leaderboard:
+    return leaderboard
 
 
 def get_order_book() -> OrderBook:
