@@ -4,7 +4,7 @@ Main API router for v1 endpoints
 
 from fastapi import APIRouter, Depends
 
-from app.api.api_v1.endpoints import admin, auth, trading, users, leaderboard
+from app.api.api_v1.endpoints import admin, auth, leaderboard, trading, users
 from app.core.deps import get_current_active_superuser
 
 api_router = APIRouter()
