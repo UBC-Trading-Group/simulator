@@ -81,7 +81,7 @@ class UserState:
 
         return avg_price
 
-    def get_realized_pnl(self):
+    def get_total_realized_pnl(self):
         return self.total_realized_pnl
 
     def set_rank(self, rank):
