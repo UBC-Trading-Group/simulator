@@ -74,8 +74,7 @@ class UserState:
             return 0
 
         avg_price = (
-            (self.prev_avg_price * prev_quantity) +
-            (order_price * order_quantity)
+            (self.prev_avg_price * prev_quantity) + (order_price * order_quantity)
         ) / self.total_shares
 
         self.prev_avg_price = avg_price
