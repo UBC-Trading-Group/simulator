@@ -2,17 +2,17 @@
 News Event model
 """
 
-from uuid import UUID
+from typing import Optional
 
 from sqlmodel import Field, SQLModel
-from uuid_utils import uuid7
 
 
 class NewsEvent(SQLModel, table=True):
     __tablename__ = "news_events"
 
-    id: UUID = Field(default_factory=uuid7, primary_key=True)
-    ts_release_ms: int = Field(nullable=False, index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     headline: str = Field(nullable=False)
-    magnitude: float = Field(nullable=False)
+    description: str = Field(nullable=False)
+    magnitude_top: float = Field(nullable=False, default=0.0)
+    magnitude_bottom: float = Field(nullable=False, default=0.0)
     decay_halflife_s: float = Field(nullable=False)

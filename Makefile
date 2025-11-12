@@ -1,6 +1,6 @@
 # Trading Simulator Backend - Docker Commands
 
-.PHONY: help build up down logs shell test clean dev format
+.PHONY: help build up down logs shell test clean dev format populate
 
 # Default target
 help: ## Show this help message
@@ -39,6 +39,9 @@ db-shell: ## Connect to PostgreSQL database shell
 
 init-db: ## Initialize database with admin user
 	docker-compose exec api uv run python scripts/init_db.py
+
+populate: ## Populate database tables with initial data
+	docker-compose exec api uv run python scripts/populate_tables.py
 
 db-reset: ## Reset the database (WARNING: This will delete all data)
 	docker-compose down -v
