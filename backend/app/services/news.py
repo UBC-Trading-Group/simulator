@@ -1,16 +1,38 @@
 import asyncio
 import time
+from typing import List, Optional, Set
 
+from app.models.news_event import NewsEvent
 from app.core.deps import get_logger
+from app.db.database import engine
+from sqlmodel import Session, select
 
 logger = get_logger(__name__)
 
 
 class NewsShockSimulator:
     def __init__(self):
-        self.news_objects = []
+        self.news_objects: List[NewsEvent] = []
         self.NEWS_TICK_DELAY = 60
+        self.preloaded_news_objects: List[NewsEvent] = []
+        self.seen_news_ids: Set[int] = set()
 
+    def pull_news_from_db(self):
+        with Session(engine) as session:
+            statement = select(NewsEvent)
+            news_objects = session.exec(statement).all()
+            self.preloaded_news_objects = sorted(news_objects, key=lambda x: x.ts_release_ms)
+    
+    def get_random_preloaded_news(self):
+        if not self.preloaded_news_objects:
+            return None
+        
+        curr_time_ms = int(time.time() * 1000)
+        due_events = [news for news in self.preloaded_news_objects if news.ts_release_ms <= curr_time_ms and news.id not in self.seen_news_ids]
+        randomized_event = random.choice(due_events)
+        self.seen_news_ids.add(randomized_event.id)
+        return randomized_event
+        
     """
     Exponential decay formula
     """
@@ -46,7 +68,7 @@ class NewsShockSimulator:
             total_eff += self.calculate(news_object)
         return total_eff
 
-    def add_news_ad_hoc(self, news_object):
+    def add_news_ad_hoc(self, news_object: Optional[NewsEvent]):
         if news_object is None:
             return
         required_fields = ["ts_release_ms", "decay_halflife_s", "magnitude"]
