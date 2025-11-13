@@ -21,18 +21,24 @@ class NewsShockSimulator:
         with Session(engine) as session:
             statement = select(NewsEvent)
             news_objects = session.exec(statement).all()
-            self.preloaded_news_objects = sorted(news_objects, key=lambda x: x.ts_release_ms)
-    
+            self.preloaded_news_objects = sorted(
+                news_objects, key=lambda x: x.ts_release_ms
+            )
+
     def get_random_preloaded_news(self):
         if not self.preloaded_news_objects:
             return None
-        
+
         curr_time_ms = int(time.time() * 1000)
-        due_events = [news for news in self.preloaded_news_objects if news.ts_release_ms <= curr_time_ms and news.id not in self.seen_news_ids]
+        due_events = [
+            news
+            for news in self.preloaded_news_objects
+            if news.ts_release_ms <= curr_time_ms and news.id not in self.seen_news_ids
+        ]
         randomized_event = random.choice(due_events)
         self.seen_news_ids.add(randomized_event.id)
         return randomized_event
-        
+
     """
     Exponential decay formula
     """
