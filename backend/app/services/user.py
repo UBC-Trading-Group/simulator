@@ -33,10 +33,10 @@ class UserState:
     # adds order that has been closed and so we call get_avg_price here
     def add_fulfilled_trades(self, order):
         self.fulfilled_trades.append(order)
-        
+
         if order["ticker"] not in self.portfolio:
             self.portfolio[order["ticker"]] = []
-        
+
         if order["side"] == "buy":
             self.portfolio[order["ticker"]].append((order["quantity"], order["price"]))
         elif order["side"] == "sell":
