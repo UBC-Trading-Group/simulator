@@ -9,7 +9,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlmodel import Session, select
 
-from app.core.deps import get_logger
 from app.core.logging import setup_logging
 from app.db.database import engine
 from app.models.instrument import Instrument
@@ -19,6 +18,8 @@ from app.models.macro_factor import MacroFactor
 from app.models.news_event import NewsEvent
 from app.models.news_event_factor import NewsEventFactor
 from app.models.sector import Sector
+
+from app.core.deps import get_logger
 
 setup_logging()
 logger = get_logger(__name__)
