@@ -8,11 +8,12 @@ class UserState:
     }
     """
 
-    def __init__(self, user_id):
+    def __init__(self, user_id, username):
         self.user_id = user_id
+        self.username = username
         self.cash = 0
 
-        self.portfolio = []  # contains user's portfolio
+        self.portfolio = {}  # contains user's portfolio
         self.unfulfilled_trades = (
             []
         )  # orders that have not been fulfilled or position is not closed
@@ -32,6 +33,10 @@ class UserState:
     # adds order that has been closed and so we call get_avg_price here
     def add_fulfilled_trades(self, order):
         self.fulfilled_trades.append(order)
+        
+        if order["ticker"] not in self.portfolio:
+            self.portfolio[order["ticker"]] = []
+        
         if order["side"] == "buy":
             self.portfolio[order["ticker"]].append((order["quantity"], order["price"]))
         elif order["side"] == "sell":
