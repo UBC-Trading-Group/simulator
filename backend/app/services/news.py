@@ -86,11 +86,9 @@ class NewsShockSimulator:
         self.is_running = True
         while self.is_running:
             try:
-                # Replace with actual DB query when ready
-                # For now, we're not adding any news automatically
-                # news = await self.db.get_latest_news()  # Example
-                # if news:
-                #     self.add_news_ad_hoc(news)
+                news = self.get_random_preloaded_news()
+                if news:
+                    self.news_objects.append(news)
                 await asyncio.sleep(self.NEWS_TICK_DELAY)
             except asyncio.CancelledError:
                 self.is_running = False
