@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   detect:
@@ -65,26 +66,21 @@ jobs:
         run: |
           uv sync --extra test --extra dev
 
-      # - name: Check formatting with black
-      #   working-directory: backend
-      #   run: |
-      #     uv run black --check .
-
       - name: Auto-format with Black
         working-directory: backend
         run: uv run black .
 
+      - name: Auto-format with isort
+        working-directory: backend
+        run: |
+          uv run isort .
+
       - name: Commit and push formatting changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: "style(backend): auto-format with Black"
+          commit_message: "style(backend): auto-format with Black and isort"
           branch: ${{ github.head_ref || github.ref_name }}
           file_pattern: backend/**
-
-      - name: Check import sorting with isort
-        working-directory: backend
-        run: |
-          uv run isort --check-only .
 
       - name: Run tests
         working-directory: backend
