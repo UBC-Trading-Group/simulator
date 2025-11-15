@@ -99,6 +99,13 @@ class OrderBook:
             return None
         return self.sells[ticker][-1]
 
+    def clamped_spread(self, ticker):
+        best_bid_w_clamp = self.best_bid_within_clamp(ticker)
+        best_ask_w_clamp = self.best_ask_within_clamp(ticker)
+        if best_bid_w_clamp and best_ask_w_clamp:
+            return best_ask_w_clamp["price"] - best_bid_w_clamp["price"]
+        return None
+
     def best_bid_within_clamp(self, ticker):
         clamp_price = self.bid_clamp(ticker)
         # if no clamp price, return best bid
