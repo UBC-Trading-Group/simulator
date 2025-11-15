@@ -31,11 +31,11 @@ class OrderBook:
         Uses binary search, bisect to maintain sorted order
 
         The worst order always goes first, so
-        buys[0] is the lowest bid order, buys sorted ascending
-        sells[0] is the highest ask order, sells sorted descending
+        buys[<TICKER>][0] is the lowest bid order, buys sorted ascending
+        sells[<TICKER>][0] is the highest ask order, sells sorted descending
         """
-        self.buys = {}  # <-- now dict[ticker -> sorted buys]
-        self.sells = {}  # <-- now dict[ticker -> sorted sells]
+        self.buys = {}
+        self.sells = {}
 
     def _get_book(self, ticker, side):
         """Helper to get or init the correct per-ticker list."""
