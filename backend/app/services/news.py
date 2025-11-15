@@ -2,10 +2,11 @@ import asyncio
 import time
 from typing import List, Optional, Set
 
-from app.models.news_event import NewsEvent
+from sqlmodel import Session, select
+
 from app.core.deps import get_logger
 from app.db.database import engine
-from sqlmodel import Session, select
+from app.models.news_event import NewsEvent
 
 logger = get_logger(__name__)
 
