@@ -159,13 +159,13 @@ class OrderBook:
         clamp_range = self.clamp_range(ticker)
         if clamp_range is None:
             return None
-        return self.last_traded_price[ticker] + clamp_range * self.clamped_delta_coeff
+        return self.mid_price(ticker) + clamp_range * self.clamped_delta_coeff
 
     def ask_clamp(self, ticker):
         clamp_range = self.clamp_range(ticker)
         if clamp_range is None:
             return None
-        return self.last_traded_price[ticker] - clamp_range * self.clamped_delta_coeff
+        return self.mid_price(ticker) - clamp_range * self.clamped_delta_coeff
 
     def mid_price(self, ticker):
         highest_bid = self.best_bid(ticker)
