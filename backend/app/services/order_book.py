@@ -36,6 +36,8 @@ class OrderBook:
         """
         self.buys = {}
         self.sells = {}
+        self.last_traded_price = {}  # for clamping order
+        self.clamped_delta_coeff = 2.5
 
     def _get_book(self, ticker, side):
         """Helper to get or init the correct per-ticker list."""
@@ -96,6 +98,67 @@ class OrderBook:
         if ticker not in self.sells or not self.sells[ticker]:
             return None
         return self.sells[ticker][-1]
+
+    def best_bid_within_clamp(self, ticker):
+        clamp_price = self.bid_clamp(ticker)
+        # if no clamp price, return best bid
+        if clamp_price is None:
+            return self.best_bid(ticker)
+
+        bids = self.buys[ticker]
+        if not bids:
+            return None
+
+        bids_prices = [b["price"] for b in bids]
+
+        # minus one because we take the best bid LESS than (the supposed insertion position)
+        # O(log n)
+        idx = bisect.bisect_right(bids_prices, clamp_price) - 1
+
+        # this just means that there are no bids less than the clamp price
+        if idx < 0:
+            return None
+
+        return bids[idx]
+
+    def best_ask_within_clamp(self, ticker):
+        clamp_price = self.ask_clamp(ticker)
+        # if no clamp price, return best ask
+        if clamp_price is None:
+            return self.best_ask(ticker)
+
+        asks = self.sells[ticker]
+        if not asks:
+            return None
+
+        asks_prices = [-a["price"] for a in asks]
+
+        # minus one because we take the best ask LESS than (the supposed insertion position)
+        # O(log n)
+        idx = bisect.bisect_right(asks_prices, clamp_price) - 1
+
+        # this just means that there are no asks less than the clamp price
+        if idx < 0:
+            return None
+
+        return asks[idx]
+
+    def clamp_range(self, ticker):
+        if ticker not in self.last_traded_price:
+            return None
+        return abs(self.mid_price(ticker) - self.last_traded_price[ticker])
+
+    def bid_clamp(self, ticker):
+        clamp_range = self.clamp_range(ticker)
+        if clamp_range is None:
+            return None
+        return self.last_traded_price[ticker] + clamp_range * self.clamped_delta_coeff
+
+    def ask_clamp(self, ticker):
+        clamp_range = self.clamp_range(ticker)
+        if clamp_range is None:
+            return None
+        return self.last_traded_price[ticker] - clamp_range * self.clamped_delta_coeff
 
     def mid_price(self, ticker):
         highest_bid = self.best_bid(ticker)
@@ -165,9 +228,14 @@ class OrderBook:
 
             # determine fill amount
             traded_qty = min(quantity, opposite["quantity"])
+
             trade_price = opposite[
                 "price"
             ]  # or mid, or last price depending on your model
+
+            # keep track of last traded price
+            if traded_qty:
+                self.last_traded_price[ticker] = trade_price
 
             # keep track of deltas for opposite orders
             order_deltas[opposite["id"]] = traded_qty
