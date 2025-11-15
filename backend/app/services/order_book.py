@@ -31,28 +31,42 @@ class OrderBook:
         Uses binary search, bisect to maintain sorted order
 
         The worst order always goes first, so
-        buys[0] is the lowest bid order, buys sorted ascending
-        sells[0] is the highest ask order, sells sorted descending
+        buys[<TICKER>][0] is the lowest bid order, buys sorted ascending
+        sells[<TICKER>][0] is the highest ask order, sells sorted descending
         """
-        self.buys = []
-        self.sells = []
+        self.buys = {}
+        self.sells = {}
+
+    def _get_book(self, ticker, side):
+        """Helper to get or init the correct per-ticker list."""
+        if side == OrderSide.BUY:
+            if ticker not in self.buys:
+                self.buys[ticker] = []
+            return self.buys[ticker]
+        else:
+            if ticker not in self.sells:
+                self.sells[ticker] = []
+            return self.sells[ticker]
 
     def add_order(self, order):
         price = order["price"]
         side = order["side"]
+        ticker = order["ticker"]
 
         # add ID for easier matching
         order["id"] = uuid.uuid4()
 
+        orders = self._get_book(ticker, side)
+
         if side == OrderSide.BUY:
-            prices = [o["price"] for o in self.buys]
+            prices = [o["price"] for o in orders]
             idx = bisect.bisect_left(prices, price)
-            self.buys.insert(idx, order)
+            orders.insert(idx, order)
         elif side == OrderSide.SELL:
             # Invert sign to maintain descending order
-            prices = [-o["price"] for o in self.sells]
+            prices = [-o["price"] for o in orders]
             idx = bisect.bisect_left(prices, -price)
-            self.sells.insert(idx, order)
+            orders.insert(idx, order)
         else:
             raise ValueError("Invalid side")
 
@@ -64,7 +78,8 @@ class OrderBook:
         TODO: Probably can (partially) optimize by using bin search to get range first
         """
         side = order["side"]
-        orders = self.buys if side == OrderSide.BUY else self.sells
+        ticker = order["ticker"]
+        orders = self._get_book(ticker, side)
 
         for i, o in enumerate(orders):
             if o == order:
@@ -72,19 +87,19 @@ class OrderBook:
                 return True
         return False
 
-    def best_bid(self):
-        if not self.buys:
+    def best_bid(self, ticker):
+        if ticker not in self.buys or not self.buys[ticker]:
             return None
-        return self.buys[-1]
+        return self.buys[ticker][-1]
 
-    def best_ask(self):
-        if not self.sells:
+    def best_ask(self, ticker):
+        if ticker not in self.sells or not self.sells[ticker]:
             return None
-        return self.sells[-1]
+        return self.sells[ticker][-1]
 
-    def mid_price(self):
-        highest_bid = self.best_bid()
-        lowest_ask = self.best_ask()
+    def mid_price(self, ticker):
+        highest_bid = self.best_bid(ticker)
+        lowest_ask = self.best_ask(ticker)
         if highest_bid and lowest_ask:
             return (highest_bid["price"] + lowest_ask["price"]) / 2
         return None
@@ -104,7 +119,13 @@ class OrderBook:
         side = order["side"]
         quantity = order["quantity"]
         initial_quantity = order["quantity"]
-        opposite_side_orders = self.sells if side == OrderSide.BUY else self.buys
+        ticker = order["ticker"]
+
+        opposite_side_orders = (
+            self.sells.get(ticker, [])
+            if side == OrderSide.BUY
+            else self.buys.get(ticker, [])
+        )
 
         # 2. nothing to scan through anyways
         if not opposite_side_orders:
@@ -112,7 +133,7 @@ class OrderBook:
             return OrderStatus.OPEN, initial_quantity
 
         # 3. no mid price -> order book is only filled on one side
-        mid = self.mid_price()
+        mid = self.mid_price(ticker)
         if mid is None:  # we know it's the same side because we did check in 2)
             mid = opposite_side_orders[0]["price"]  # use the worst
 

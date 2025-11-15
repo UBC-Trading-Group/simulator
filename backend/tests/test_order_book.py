@@ -43,9 +43,9 @@ class TestOrderBook(TestCase):
         self.order_book.add_order(self.buy_order_100.copy())
 
         # Verify orders are in correct order (ascending by price)
-        self.assertEqual(len(self.order_book.buys), 2)
-        self.assertEqual(self.order_book.buys[0]["price"], 100)
-        self.assertEqual(self.order_book.buys[1]["price"], 101)
+        self.assertEqual(len(self.order_book.buys["AAPL"]), 2)
+        self.assertEqual(self.order_book.buys["AAPL"][0]["price"], 100)
+        self.assertEqual(self.order_book.buys["AAPL"][1]["price"], 101)
 
     def test_order_insertion_end(self):
         """Test inserting sell orders at the end of the order book"""
@@ -54,9 +54,9 @@ class TestOrderBook(TestCase):
         self.order_book.add_order(self.sell_order_102.copy())
 
         # Verify orders are in correct order (descending by price)
-        self.assertEqual(len(self.order_book.sells), 2)
-        self.assertEqual(self.order_book.sells[0]["price"], 103)
-        self.assertEqual(self.order_book.sells[1]["price"], 102)
+        self.assertEqual(len(self.order_book.sells["AAPL"]), 2)
+        self.assertEqual(self.order_book.sells["AAPL"][0]["price"], 103)
+        self.assertEqual(self.order_book.sells["AAPL"][1]["price"], 102)
 
     def test_order_insertion_middle(self):
         """Test inserting orders in the middle of the order book"""
@@ -90,10 +90,10 @@ class TestOrderBook(TestCase):
         )
 
         # Verify orders are in correct order (ascending by price)
-        self.assertEqual(len(self.order_book.buys), 3)
-        self.assertEqual(self.order_book.buys[0]["price"], 100)
-        self.assertEqual(self.order_book.buys[1]["price"], 102)
-        self.assertEqual(self.order_book.buys[2]["price"], 105)
+        self.assertEqual(len(self.order_book.buys["AAPL"]), 3)
+        self.assertEqual(self.order_book.buys["AAPL"][0]["price"], 100)
+        self.assertEqual(self.order_book.buys["AAPL"][1]["price"], 102)
+        self.assertEqual(self.order_book.buys["AAPL"][2]["price"], 105)
 
     def test_order_matching_partial(self):
         """Test partial order matching"""
@@ -114,14 +114,14 @@ class TestOrderBook(TestCase):
 
         # Verify the results
         self.assertEqual(status, OrderStatus.PARTIALLY_FILLED)
-        self.assertEqual(remaining_qty, 7)  # 15 - 8 = 7 remaining
+        self.assertEqual(remaining_qty, 7)
         self.assertEqual(
-            len(self.order_book.sells), 0
+            len(self.order_book.sells["AAPL"]), 0
         )  # Sell order should be fully matched and removed
         self.assertEqual(
-            len(self.order_book.buys), 1
+            len(self.order_book.buys["AAPL"]), 1
         )  # Buy order should be added with remaining quantity
-        self.assertEqual(self.order_book.buys[0]["quantity"], 7)
+        self.assertEqual(self.order_book.buys["AAPL"][0]["quantity"], 7)
 
     def test_order_matching_full(self):
         """Test full order matching"""
@@ -143,13 +143,9 @@ class TestOrderBook(TestCase):
         # Verify the results
         self.assertEqual(status, OrderStatus.FILLED)
         self.assertEqual(remaining_qty, 0)
-        self.assertEqual(
-            len(self.order_book.sells), 1
-        )  # Sell order should still exist with reduced quantity
-        self.assertEqual(
-            len(self.order_book.buys), 0
-        )  # Buy order should be fully matched and not added
-        self.assertEqual(self.order_book.sells[0]["quantity"], 3)  # 8 - 5 = 3 remaining
+        self.assertEqual(len(self.order_book.sells["AAPL"]), 1)
+        self.assertEqual(len(self.order_book.buys.get("AAPL", [])), 0)
+        self.assertEqual(self.order_book.sells["AAPL"][0]["quantity"], 3)
 
     def test_order_matching_no_match(self):
         """Test order matching when no match is possible"""
@@ -170,44 +166,37 @@ class TestOrderBook(TestCase):
 
         # Verify the results
         self.assertEqual(status, OrderStatus.OPEN)
-        self.assertEqual(remaining_qty, 5)  # No quantity was matched
-        self.assertEqual(
-            len(self.order_book.buys), 1
-        )  # Buy order should be added to the book
-        self.assertEqual(
-            len(self.order_book.sells), 1
-        )  # Sell order should remain unchanged
+        self.assertEqual(remaining_qty, 5)
+        self.assertEqual(len(self.order_book.buys["AAPL"]), 1)
+        self.assertEqual(len(self.order_book.sells["AAPL"]), 1)
 
     def test_order_removal(self):
         """Test removing an order from the order book"""
         # Add an order
         self.order_book.add_order(self.buy_order_100.copy())
-        self.assertEqual(len(self.order_book.buys), 1)
+        self.assertEqual(len(self.order_book.buys["AAPL"]), 1)
 
         # Remove the order
-        result = self.order_book.remove_order(self.order_book.buys[0])
+        result = self.order_book.remove_order(self.order_book.buys["AAPL"][0])
 
         # Verify removal
         self.assertTrue(result)
-        self.assertEqual(len(self.order_book.buys), 0)
+        self.assertEqual(len(self.order_book.buys["AAPL"]), 0)
 
     def test_mid_price_calculation(self):
         """Test mid price calculation"""
         # With no orders, mid price should be None
-        self.assertIsNone(self.order_book.mid_price())
+        self.assertIsNone(self.order_book.mid_price("AAPL"))
 
         # Add a buy order
         self.order_book.add_order(self.buy_order_100.copy())
-        self.assertIsNone(
-            self.order_book.mid_price()
-        )  # Still None because we need both buy and sell orders
+        self.assertIsNone(self.order_book.mid_price("AAPL"))
 
         # Add a sell order
         self.order_book.add_order(self.sell_order_102.copy())
 
-        # Mid price should be average of best bid and ask
         expected_mid = (100 + 102) / 2
-        self.assertEqual(self.order_book.mid_price(), expected_mid)
+        self.assertEqual(self.order_book.mid_price("AAPL"), expected_mid)
 
     def test_multiple_order_matching(self):
         """Test matching an order against multiple orders"""
@@ -231,7 +220,7 @@ class TestOrderBook(TestCase):
             }
         )
 
-        # Create a large buy order that will match both sell orders
+        # Create a large buy order
         buy_order = {
             "price": 103,
             "quantity": 7,
@@ -243,14 +232,12 @@ class TestOrderBook(TestCase):
         # Match the order
         status, remaining_qty = self.order_book.match_order(buy_order)
 
-        # Verify the results
+        # Verify results
         self.assertEqual(status, OrderStatus.FILLED)
-        self.assertEqual(remaining_qty, 0)  # all filled
+        self.assertEqual(remaining_qty, 0)
 
-        # here, we take the worst ask first, so only 101 should be left
-        self.assertEqual(len(self.order_book.sells), 1)
-        self.assertEqual(self.order_book.sells[0]["quantity"], 1)
-        self.assertEqual(self.order_book.sells[0]["price"], 101)
+        self.assertEqual(len(self.order_book.sells["AAPL"]), 1)
+        self.assertEqual(self.order_book.sells["AAPL"][0]["quantity"], 1)
+        self.assertEqual(self.order_book.sells["AAPL"][0]["price"], 101)
 
-        # nothing is added to the buys
-        self.assertEqual(len(self.order_book.buys), 0)
+        self.assertEqual(len(self.order_book.buys.get("AAPL", [])), 0)
