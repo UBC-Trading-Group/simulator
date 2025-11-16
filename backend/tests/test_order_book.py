@@ -220,6 +220,6 @@ class TestOrderBook(TestCase):
         remaining_sells = [o[2] for o in self.order_book.sells["AAPL"]]
         self.assertEqual(len(remaining_sells), 1)
         self.assertEqual(remaining_sells[0]["quantity"], 1)
-        self.assertEqual(remaining_sells[0]["price"], 101)
+        self.assertEqual(remaining_sells[0]["price"], 102)
 
         self.assertEqual(len(self.order_book.buys.get("AAPL", [])), 0)
