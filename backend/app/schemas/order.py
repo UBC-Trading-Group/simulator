@@ -16,8 +16,8 @@ class OrderStatus(str, Enum):
 
 
 class OrderModel(BaseModel):
-    price: float = Field(..., gt=0)
-    quantity: int = Field(..., gt=0)
+    price: float = Field(..., ge=0)  # gt will throw error when matching order
+    quantity: int = Field(..., ge=0)
     ticker: str
     side: OrderSide
     user_id: str
