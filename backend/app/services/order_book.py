@@ -47,7 +47,7 @@ class OrderBook:
         self.buys = {}
         self.sells = {}
         self.last_traded_price = {}  # for clamping order
-        self.clamped_delta_coeff = 2.5
+        self.CLAMPED_DELTA_COEFF = 2.5
         self.PRICE_IDX = 0
         self.QUANTITY_IDX = 1
         self.ORDER_OBJ_IDX = 2
@@ -172,7 +172,7 @@ class OrderBook:
         if clamp_range is None:
             return None
 
-        return mid + clamp_range * self.clamped_delta_coeff
+        return mid + clamp_range * self.CLAMPED_DELTA_COEFF
 
     def ask_clamp(self, ticker):
         mid = self.mid_price(ticker)
@@ -183,7 +183,7 @@ class OrderBook:
         if clamp_range is None:
             return None
 
-        return mid - clamp_range * self.clamped_delta_coeff
+        return mid - clamp_range * self.CLAMPED_DELTA_COEFF
 
     def mid_price(self, ticker):
         highest_bid = self.best_bid(ticker)
