@@ -1,4 +1,4 @@
-import bisect
+import heapq
 import uuid
 from enum import Enum
 
@@ -28,14 +28,29 @@ class OrderBook:
 
     def __init__(self):
         """
-        Uses binary search, bisect to maintain sorted order
+        Use heap to always get the best bid / best ask first
+        Refer to "Number of items in backlog" for reference
 
-        The worst order always goes first, so
-        buys[<TICKER>][0] is the lowest bid order, buys sorted ascending
-        sells[<TICKER>][0] is the highest ask order, sells sorted descending
+        Mapping is
+        ticker -> HEAP of orders
+
+        buys will be max heap (to get highest bid)
+        -> (-price, quantity, <ORDER_OBJ>)
+
+        sells will be min heap (to get lowest ask)
+        -> (price, quantity, <ORDER_OBJ>)
+
+        price is index 0
+        quantity is index 1
+        order object is index 2
         """
         self.buys = {}
         self.sells = {}
+        self.last_traded_price = {}  # for clamping order
+        self.clamped_delta_coeff = 2.5
+        self.PRICE_IDX = 0
+        self.QUANTITY_IDX = 1
+        self.ORDER_OBJ_IDX = 2
 
     def _get_book(self, ticker, side):
         """Helper to get or init the correct per-ticker list."""
@@ -48,25 +63,22 @@ class OrderBook:
                 self.sells[ticker] = []
             return self.sells[ticker]
 
-    def add_order(self, order):
+    def add_order(self, order, modify=False):
         price = order["price"]
         side = order["side"]
         ticker = order["ticker"]
+        quantity = order["quantity"]
 
         # add ID for easier matching
-        order["id"] = uuid.uuid4()
+        if not modify:
+            order["id"] = uuid.uuid4()
 
-        orders = self._get_book(ticker, side)
+        book = self._get_book(ticker, side)
 
         if side == OrderSide.BUY:
-            prices = [o["price"] for o in orders]
-            idx = bisect.bisect_left(prices, price)
-            orders.insert(idx, order)
+            heapq.heappush(book, (-price, quantity, order))
         elif side == OrderSide.SELL:
-            # Invert sign to maintain descending order
-            prices = [-o["price"] for o in orders]
-            idx = bisect.bisect_left(prices, -price)
-            orders.insert(idx, order)
+            heapq.heappush(book, (price, quantity, order))
         else:
             raise ValueError("Invalid side")
 
@@ -74,28 +86,104 @@ class OrderBook:
         """
         Remove order from order book
         Has to be linear scan since multiple orders can have same price
-
-        TODO: Probably can (partially) optimize by using bin search to get range first
         """
         side = order["side"]
         ticker = order["ticker"]
         orders = self._get_book(ticker, side)
 
-        for i, o in enumerate(orders):
-            if o == order:
+        for i, entry in enumerate(orders):
+            # first two are price and quantity, third is order object
+            _, _, order_obj = entry
+            if order_obj["id"] == order["id"]:
                 orders.pop(i)
+                heapq.heapify(orders)  # maintain the heap property
                 return True
         return False
 
     def best_bid(self, ticker):
         if ticker not in self.buys or not self.buys[ticker]:
             return None
-        return self.buys[ticker][-1]
+        return self.buys[ticker][0][self.ORDER_OBJ_IDX]
 
     def best_ask(self, ticker):
         if ticker not in self.sells or not self.sells[ticker]:
             return None
-        return self.sells[ticker][-1]
+        return self.sells[ticker][0][self.ORDER_OBJ_IDX]
+
+    def clamped_spread(self, ticker):
+        best_bid_w_clamp = self.best_bid_within_clamp(ticker)
+        best_ask_w_clamp = self.best_ask_within_clamp(ticker)
+        if best_bid_w_clamp and best_ask_w_clamp:
+            return best_ask_w_clamp["price"] - best_bid_w_clamp["price"]
+        return None
+
+    def best_bid_within_clamp(self, ticker):
+        clamp_price = self.bid_clamp(ticker)
+        if clamp_price is None:
+            return self.best_bid(ticker)
+
+        best = None
+
+        for entry in self.buys.get(ticker, []):
+            order = entry[self.ORDER_OBJ_IDX]
+            price = order["price"]
+
+            if price <= clamp_price:
+                if best is None or price > best["price"]:
+                    best = order
+
+        return best
+
+    def best_ask_within_clamp(self, ticker):
+        clamp_price = self.ask_clamp(ticker)
+        if clamp_price is None:
+            return self.best_ask(ticker)
+
+        best = None
+
+        for entry in self.sells.get(ticker, []):
+            order = entry[self.ORDER_OBJ_IDX]
+            price = order["price"]
+
+            if price >= clamp_price:
+                if best is None or price < best["price"]:
+                    best = order
+
+        return best
+
+    def clamp_range(self, ticker):
+        # Need a previous trade to compute clamp
+        if ticker not in self.last_traded_price:
+            return None
+
+        mid = self.mid_price(ticker)
+        if mid is None:
+            return None
+
+        last = self.last_traded_price[ticker]
+        return abs(mid - last)
+
+    def bid_clamp(self, ticker):
+        mid = self.mid_price(ticker)
+        if mid is None:
+            return None
+
+        clamp_range = self.clamp_range(ticker)
+        if clamp_range is None:
+            return None
+
+        return mid + clamp_range * self.clamped_delta_coeff
+
+    def ask_clamp(self, ticker):
+        mid = self.mid_price(ticker)
+        if mid is None:
+            return None
+
+        clamp_range = self.clamp_range(ticker)
+        if clamp_range is None:
+            return None
+
+        return mid - clamp_range * self.clamped_delta_coeff
 
     def mid_price(self, ticker):
         highest_bid = self.best_bid(ticker)
@@ -106,105 +194,65 @@ class OrderBook:
 
     def match_order(self, order):
         """
-        Matches buy with corresponding sell order, or sell with corresponding buy order
-        Matching should happen based on proximity to mid price, closest to mid price goes first
-        Return status whether matching was successful
-        Partial matching is possible
-
-        TODO Brian -> revisit algo
-        TODO Brian -> write unit tests (test_order_book.py)
-        This function will be called many times so best to optimize
+        Matches buy with corresponding sell orders, or sell with buy orders.
+        Matching is price-priority based (max bid vs min ask), partial fills allowed.
+        Updates last traded price and order book.
+        Returns: (status, remaining quantity)
         """
-        # 1. required variables
         side = order["side"]
-        quantity = order["quantity"]
-        initial_quantity = order["quantity"]
         ticker = order["ticker"]
+        quantity = order["quantity"]
+        initial_quantity = quantity
 
-        opposite_side_orders = (
-            self.sells.get(ticker, [])
-            if side == OrderSide.BUY
-            else self.buys.get(ticker, [])
-        )
+        # Select the heap for the opposite side
+        if side == OrderSide.BUY:
+            opposite_heap = self.sells.setdefault(ticker, [])
+            is_buy = True
+        else:
+            opposite_heap = self.buys.setdefault(ticker, [])
+            is_buy = False
 
-        # 2. nothing to scan through anyways
-        if not opposite_side_orders:
+        # If no opposite orders, just add to book
+        if not opposite_heap:
             self.add_order(order)
             return OrderStatus.OPEN, initial_quantity
 
-        # 3. no mid price -> order book is only filled on one side
-        mid = self.mid_price(ticker)
-        if mid is None:  # we know it's the same side because we did check in 2)
-            mid = opposite_side_orders[0]["price"]  # use the worst
+        while quantity > 0 and opposite_heap:
+            best_entry = opposite_heap[0]
+            opp_price, opp_qty, opp_order = best_entry if not is_buy else best_entry
+            if is_buy:
+                # Sell heap stores (price, qty, order_obj)
+                if opp_price > order["price"]:
+                    break  # cannot match
+            else:
+                # Buy heap stores (-price, qty, order_obj)
+                if -opp_price < order["price"]:
+                    break  # cannot match
 
-        # 4. look through opposite side orders
-        """
-        TODO Brian -> revisit algo
-        a. Sort once based on proximity to avoid repeated scans when multiple orders are meant to be matched
-        b. Create a mapping of order ID -> delta (so we can update order book in one linear scan)
-        c. After iteration, status can be "FILLED", "PARTIALLY_FILLED", "OPEN"
-        """
-        sorted_opposites = sorted(
-            opposite_side_orders, key=lambda o: abs(o["price"] - mid)
-        )
-        order_deltas = {}  # maps order ID -> delta
-        matched_trades = (
-            []
-        )  # keep track of trades that are matched (do we need this for logs?)
+            traded_qty = min(quantity, opp_order["quantity"])
+            trade_price = opp_order["price"]
 
-        i = 0
-        while i < len(sorted_opposites) and quantity > 0:
-            opposite = sorted_opposites[i]
+            self.last_traded_price[ticker] = trade_price
 
-            # skip if price not compatible
-            if (side == OrderSide.BUY and opposite["price"] > order["price"]) or (
-                side == OrderSide.SELL and opposite["price"] < order["price"]
-            ):
-                i += 1
-                continue
-
-            # determine fill amount
-            traded_qty = min(quantity, opposite["quantity"])
-            trade_price = opposite[
-                "price"
-            ]  # or mid, or last price depending on your model
-
-            # keep track of deltas for opposite orders
-            order_deltas[opposite["id"]] = traded_qty
-
-            matched_trades.append(
-                {
-                    "buy": order if side == OrderSide.BUY else opposite,
-                    "sell": opposite if side == OrderSide.BUY else order,
-                    "price": trade_price,
-                    "quantity": traded_qty,
-                }
-            )
-
-            # update quantity remaining
+            opp_order["quantity"] -= traded_qty
             quantity -= traded_qty
 
-            # move to next order
-            i += 1
+            # At this point we are guaranteed qty traded is > 0
+            heapq.heappop(opposite_heap)
+            if opp_order["quantity"] > 0:
+                # Set modify flag to prevent generating a new uuid
+                self.add_order(opp_order, modify=True)
 
-        # 5. update actual order book using stored deltas in one linear scan (as mentioned in 4b)
-        # !!! MAKE A COPY since we are modifying the list in place
-        for original_opposite in list(opposite_side_orders):
-            if original_opposite["id"] in order_deltas:
-                original_opposite["quantity"] -= order_deltas[original_opposite["id"]]
-                if original_opposite["quantity"] == 0:
-                    opposite_side_orders.remove(original_opposite)
-
-        # 6. determine matching status
-        matching_status = None
-        if quantity == initial_quantity:  # NOTHING was processed
-            matching_status = OrderStatus.OPEN
+        # Handle the remaining quantities (if any)
+        if quantity == initial_quantity:
+            # Nothing matched
             self.add_order(order)
-        elif quantity > 0:  # SOME were processed
+            return OrderStatus.OPEN, initial_quantity
+        elif quantity > 0:
+            # Partially matched
             order["quantity"] = quantity
-            matching_status = OrderStatus.PARTIALLY_FILLED
             self.add_order(order)
-        else:  # EVERYTHING was processed
-            matching_status = OrderStatus.FILLED
-
-        return matching_status, quantity
+            return OrderStatus.PARTIALLY_FILLED, quantity
+        else:
+            # Fully matched
+            return OrderStatus.FILLED, 0
