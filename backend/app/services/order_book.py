@@ -1,17 +1,7 @@
 import heapq
-import uuid
-from enum import Enum
+from typing import Dict, List, Optional, Tuple
 
-
-class OrderSide(Enum):
-    BUY = "buy"
-    SELL = "sell"
-
-
-class OrderStatus(Enum):
-    OPEN = "open"
-    PARTIALLY_FILLED = "partially_filled"
-    FILLED = "filled"
+from app.schemas.order import OrderModel, OrderSide, OrderStatus
 
 
 class OrderBook:
@@ -44,15 +34,17 @@ class OrderBook:
         quantity is index 1
         order object is index 2
         """
-        self.buys = {}
-        self.sells = {}
-        self.last_traded_price = {}  # for clamping order
-        self.clamped_delta_coeff = 2.5
+        self.buys: Dict[str, List[Tuple[float, int, OrderModel]]] = {}
+        self.sells: Dict[str, List[Tuple[float, int, OrderModel]]] = {}
+        self.last_traded_price: Dict[str, float] = {}
+        self.clamped_delta_coeff: float = 2.5
         self.PRICE_IDX = 0
         self.QUANTITY_IDX = 1
         self.ORDER_OBJ_IDX = 2
 
-    def _get_book(self, ticker, side):
+    def _get_book(
+        self, ticker: str, side: OrderSide
+    ) -> List[Tuple[float, int, OrderModel]]:
         """Helper to get or init the correct per-ticker list."""
         if side == OrderSide.BUY:
             if ticker not in self.buys:
@@ -63,16 +55,13 @@ class OrderBook:
                 self.sells[ticker] = []
             return self.sells[ticker]
 
-    def add_order(self, order, modify=False):
-        price = order["price"]
-        side = order["side"]
-        ticker = order["ticker"]
-        quantity = order["quantity"]
+    def add_order(self, order: OrderModel) -> None:
+        price = order.price
+        side = order.side
+        ticker = order.ticker
+        quantity = order.quantity
 
-        # add ID for easier matching
-        if not modify:
-            order["id"] = uuid.uuid4()
-
+        # ID will be automatically set if not provided
         book = self._get_book(ticker, side)
 
         if side == OrderSide.BUY:
@@ -82,76 +71,75 @@ class OrderBook:
         else:
             raise ValueError("Invalid side")
 
-    def remove_order(self, order):
+    def remove_order(self, order: OrderModel) -> bool:
         """
         Remove order from order book
         Has to be linear scan since multiple orders can have same price
         """
-        side = order["side"]
-        ticker = order["ticker"]
+        side = order.side
+        ticker = order.ticker
         orders = self._get_book(ticker, side)
 
         for i, entry in enumerate(orders):
-            # first two are price and quantity, third is order object
             _, _, order_obj = entry
-            if order_obj["id"] == order["id"]:
+            if order_obj.id == order.id:
                 orders.pop(i)
                 heapq.heapify(orders)  # maintain the heap property
                 return True
         return False
 
-    def best_bid(self, ticker):
+    def best_bid(self, ticker: str) -> Optional[OrderModel]:
         if ticker not in self.buys or not self.buys[ticker]:
             return None
         return self.buys[ticker][0][self.ORDER_OBJ_IDX]
 
-    def best_ask(self, ticker):
+    def best_ask(self, ticker: str) -> Optional[OrderModel]:
         if ticker not in self.sells or not self.sells[ticker]:
             return None
         return self.sells[ticker][0][self.ORDER_OBJ_IDX]
 
-    def clamped_spread(self, ticker):
+    def clamped_spread(self, ticker: str) -> Optional[float]:
         best_bid_w_clamp = self.best_bid_within_clamp(ticker)
         best_ask_w_clamp = self.best_ask_within_clamp(ticker)
         if best_bid_w_clamp and best_ask_w_clamp:
-            return best_ask_w_clamp["price"] - best_bid_w_clamp["price"]
+            return best_ask_w_clamp.price - best_bid_w_clamp.price
         return None
 
-    def best_bid_within_clamp(self, ticker):
+    def best_bid_within_clamp(self, ticker: str) -> Optional[OrderModel]:
         clamp_price = self.bid_clamp(ticker)
         if clamp_price is None:
             return self.best_bid(ticker)
 
-        best = None
+        best: Optional[OrderModel] = None
 
         for entry in self.buys.get(ticker, []):
             order = entry[self.ORDER_OBJ_IDX]
-            price = order["price"]
+            price = order.price
 
             if price <= clamp_price:
-                if best is None or price > best["price"]:
+                if best is None or price > best.price:
                     best = order
 
         return best
 
-    def best_ask_within_clamp(self, ticker):
+    def best_ask_within_clamp(self, ticker: str) -> Optional[OrderModel]:
         clamp_price = self.ask_clamp(ticker)
         if clamp_price is None:
             return self.best_ask(ticker)
 
-        best = None
+        best: Optional[OrderModel] = None
 
         for entry in self.sells.get(ticker, []):
             order = entry[self.ORDER_OBJ_IDX]
-            price = order["price"]
+            price = order.price
 
             if price >= clamp_price:
-                if best is None or price < best["price"]:
+                if best is None or price < best.price:
                     best = order
 
         return best
 
-    def clamp_range(self, ticker):
+    def clamp_range(self, ticker: str) -> Optional[float]:
         # Need a previous trade to compute clamp
         if ticker not in self.last_traded_price:
             return None
@@ -163,7 +151,7 @@ class OrderBook:
         last = self.last_traded_price[ticker]
         return abs(mid - last)
 
-    def bid_clamp(self, ticker):
+    def bid_clamp(self, ticker: str) -> Optional[float]:
         mid = self.mid_price(ticker)
         if mid is None:
             return None
@@ -174,7 +162,7 @@ class OrderBook:
 
         return mid + clamp_range * self.clamped_delta_coeff
 
-    def ask_clamp(self, ticker):
+    def ask_clamp(self, ticker: str) -> Optional[float]:
         mid = self.mid_price(ticker)
         if mid is None:
             return None
@@ -185,23 +173,23 @@ class OrderBook:
 
         return mid - clamp_range * self.clamped_delta_coeff
 
-    def mid_price(self, ticker):
+    def mid_price(self, ticker: str) -> Optional[float]:
         highest_bid = self.best_bid(ticker)
         lowest_ask = self.best_ask(ticker)
         if highest_bid and lowest_ask:
-            return (highest_bid["price"] + lowest_ask["price"]) / 2
+            return (highest_bid.price + lowest_ask.price) / 2
         return None
 
-    def match_order(self, order):
+    def match_order(self, order: OrderModel) -> tuple[OrderStatus, int]:
         """
         Matches buy with corresponding sell orders, or sell with buy orders.
         Matching is price-priority based (max bid vs min ask), partial fills allowed.
         Updates last traded price and order book.
         Returns: (status, remaining quantity)
         """
-        side = order["side"]
-        ticker = order["ticker"]
-        quantity = order["quantity"]
+        side = order.side
+        ticker = order.ticker
+        quantity = order.quantity
         initial_quantity = quantity
 
         # Select the heap for the opposite side
@@ -220,28 +208,28 @@ class OrderBook:
         while quantity > 0 and opposite_heap:
             best_entry = opposite_heap[0]
             opp_price, opp_qty, opp_order = best_entry if not is_buy else best_entry
+
             if is_buy:
                 # Sell heap stores (price, qty, order_obj)
-                if opp_price > order["price"]:
+                if opp_price > order.price:
                     break  # cannot match
             else:
                 # Buy heap stores (-price, qty, order_obj)
-                if -opp_price < order["price"]:
+                if -opp_price < order.price:
                     break  # cannot match
 
-            traded_qty = min(quantity, opp_order["quantity"])
-            trade_price = opp_order["price"]
+            traded_qty = min(quantity, opp_order.quantity)
+            trade_price = opp_order.price
 
             self.last_traded_price[ticker] = trade_price
 
-            opp_order["quantity"] -= traded_qty
+            opp_order.quantity -= traded_qty
             quantity -= traded_qty
 
-            # At this point we are guaranteed qty traded is > 0
             heapq.heappop(opposite_heap)
-            if opp_order["quantity"] > 0:
+            if opp_order.quantity > 0:
                 # Set modify flag to prevent generating a new uuid
-                self.add_order(opp_order, modify=True)
+                self.add_order(opp_order)
 
         # Handle the remaining quantities (if any)
         if quantity == initial_quantity:
@@ -250,7 +238,7 @@ class OrderBook:
             return OrderStatus.OPEN, initial_quantity
         elif quantity > 0:
             # Partially matched
-            order["quantity"] = quantity
+            order.quantity = quantity
             self.add_order(order)
             return OrderStatus.PARTIALLY_FILLED, quantity
         else:
