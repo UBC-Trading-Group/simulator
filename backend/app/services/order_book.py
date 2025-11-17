@@ -37,7 +37,7 @@ class OrderBook:
         self.buys: Dict[str, List[Tuple[float, int, OrderModel]]] = {}
         self.sells: Dict[str, List[Tuple[float, int, OrderModel]]] = {}
         self.last_traded_price: Dict[str, float] = {}
-        self.clamped_delta_coeff: float = 2.5
+        self.CLAMPED_DELTA_COEFF: float = 2.5
         self.PRICE_IDX = 0
         self.QUANTITY_IDX = 1
         self.ORDER_OBJ_IDX = 2
@@ -160,7 +160,7 @@ class OrderBook:
         if clamp_range is None:
             return None
 
-        return mid + clamp_range * self.clamped_delta_coeff
+        return mid + clamp_range * self.CLAMPED_DELTA_COEFF
 
     def ask_clamp(self, ticker: str) -> Optional[float]:
         mid = self.mid_price(ticker)
@@ -171,7 +171,7 @@ class OrderBook:
         if clamp_range is None:
             return None
 
-        return mid - clamp_range * self.clamped_delta_coeff
+        return mid - clamp_range * self.CLAMPED_DELTA_COEFF
 
     def mid_price(self, ticker: str) -> Optional[float]:
         highest_bid = self.best_bid(ticker)
