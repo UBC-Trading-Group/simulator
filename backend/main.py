@@ -8,26 +8,10 @@ import asyncio
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
-# Create database tables
-from sqlmodel import SQLModel
-
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
-from app.db.database import engine
-from app.models import (
-    Bot,
-    BotPosition,
-    Instrument,
-    InstrumentFactorExposure,
-    InstrumentSectorExposure,
-    MacroFactor,
-    NewsEvent,
-    NewsEventFactor,
-    Sector,
-    User,
-)
-from dependencies import news_engine, price_engine
+from dependencies import instrument_manager, news_engine, price_engine
 
 # Setup logging
 setup_logging()
@@ -70,6 +54,16 @@ async def version_check():
 
 @app.on_event("startup")
 async def startup_event():
+    """
+    Initialize instrument manager
+    """
+    instrument_manager.initialize_instruments()
+
+    """
+    Initialize GBM manager
+    """
+    asyncio.create_task(gbm_manager.run())
+
     """
     Start price engine for GBM
     """

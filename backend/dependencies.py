@@ -1,6 +1,8 @@
 import redis.asyncio as redis
 
 from app.core.config import settings
+from app.services.gbm_manager import GBMManager
+from app.services.instrument_manager import InstrumentManager
 from app.services.leaderboard import Leaderboard
 from app.services.news import NewsShockSimulator
 from app.services.order_book import OrderBook
@@ -15,6 +17,8 @@ price_engine = PriceEngine(news_engine=news_engine)
 redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=False)
 leaderboard = Leaderboard(redis_client)
 order_book = OrderBook()
+instrument_manager = InstrumentManager()
+gbm_manager = GBMManager()
 
 
 def get_price_engine() -> PriceEngine:
@@ -31,3 +35,11 @@ def get_leaderboard() -> Leaderboard:
 
 def get_order_book() -> OrderBook:
     return order_book
+
+
+def get_instrument_manager() -> InstrumentManager:
+    return instrument_manager
+
+
+def get_gbm_manager() -> GBMManager:
+    return gbm_manager
