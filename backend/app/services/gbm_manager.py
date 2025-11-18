@@ -1,4 +1,5 @@
 from app.models.instrument import Instrument
+from app.services.gbm import GeometricBrownianMotionAssetSimulator
 from app.services.instrument_manager import InstrumentManager
 
 
@@ -6,10 +7,10 @@ class GBMManager:
     def __init__(self, instrument_manager: InstrumentManager):
         self.instruments: list[Instrument] = instrument_manager.get_all_instruments()
         self.gbmas_instances = {
-            ticker.ticker: GeometricBrownianMotionAssetSimulator(
-                ticker.s_0, ticker.mean, ticker.variance, 1 / 252
+            instrument.id: GeometricBrownianMotionAssetSimulator(
+                instrument.s_0, instrument.mean, instrument.variance, 1 / 252
             )
-            for ticker in self.instruments
+            for instrument in self.instruments
         }
 
     async def run(self):
