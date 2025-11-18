@@ -18,7 +18,9 @@ redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=False)
 leaderboard = Leaderboard(redis_client)
 order_book = OrderBook()
 instrument_manager = InstrumentManager()
-gbm_manager = GBMManager()
+gbm_manager = GBMManager(
+    instrument_manager
+)  # need to be injected to avoid circular dependency
 
 
 def get_price_engine() -> PriceEngine:
