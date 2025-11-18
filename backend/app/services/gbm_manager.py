@@ -1,4 +1,5 @@
 from app.models.instrument import Instrument
+from app.services.instrument_manager import InstrumentManager
 
 
 class GBMManager:
