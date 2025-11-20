@@ -25,7 +25,8 @@ class TestGeometricBrownianMotionAssetSimulator(TestCase):
     def test_gbm_mean_var(self):
         prices = [self.S0]
         for _ in range(self.n_samples):
-            prices.append(self.gbmas())
+            self.gbmas()
+            prices.append(self.gbmas.get_current_price())
 
         expected_mean = (self.mu - (0.5 * self.sigma**2)) * self.dt
         expected_var = self.sigma**2 * self.dt

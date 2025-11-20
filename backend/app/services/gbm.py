@@ -31,7 +31,9 @@ class GeometricBrownianMotionAssetSimulator:
 
         self.current_price = next_price
         self.time += self.delta
-        return next_price
+
+    def get_current_price(self) -> float:
+        return self.current_price
 
     def __call__(self):
-        return self.calculate()
+        self.calculate()

@@ -1,4 +1,5 @@
 from app.schemas.order import OrderModel
+from dependencies import get_instrument_manager
 
 
 class OrderProcessor:
@@ -13,7 +14,14 @@ class OrderProcessor:
         return OrderModel(**order)
 
     def process_order(self, order):
-        order = self._ensure_model(order)
+        order: OrderModel = self._ensure_model(order)
+        instrument_manager = get_instrument_manager()
+
+        if not instrument_manager.is_valid_instrument(order.ticker):
+            return {
+                "status": "INVALID_INSTRUMENT",
+                "message": "Invalid instrument",
+            }
 
         processing_status, unprocessed_quantity = self.order_book.match_order(order)
 
@@ -24,7 +32,14 @@ class OrderProcessor:
         }
 
     def cancel_order(self, order):
-        order = self._ensure_model(order)
+        order: OrderModel = self._ensure_model(order)
+        instrument_manager = get_instrument_manager()
+
+        if not instrument_manager.is_valid_instrument(order.ticker):
+            return {
+                "status": "INVALID_INSTRUMENT",
+                "message": "Invalid instrument",
+            }
 
         success = self.order_book.remove_order(order)
 
