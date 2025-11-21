@@ -46,13 +46,6 @@ class OrderGenerator:
         target_bid = mid_gbm - (spread / 2)
         target_ask = mid_gbm + (spread / 2)
 
-        bid_upper = self.order_book.bid_clamp(ticker)
-        ask_lower = self.order_book.ask_clamp(ticker)
-
-        best_ask_w_clamp = self.order_book.best_ask_within_clamp(ticker)
-        best_bid_w_clamp = self.order_book.best_bid_within_clamp(ticker)
-
-        # TODO: handle the case to shift beyond best ask and bid
         buy_order = OrderModel(
             price=round(target_bid, 2),
             quantity=self.default_quantity,
