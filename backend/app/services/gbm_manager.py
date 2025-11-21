@@ -1,3 +1,5 @@
+import asyncio
+
 from app.models.instrument import Instrument
 from app.services.gbm import GeometricBrownianMotionAssetSimulator
 from app.services.instrument_manager import InstrumentManager
