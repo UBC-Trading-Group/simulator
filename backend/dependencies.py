@@ -2,6 +2,7 @@ import redis.asyncio as redis
 
 from app.core.config import settings
 from app.services.gbm_manager import GBMManager
+from app.services.order_generator import OrderGenerator
 from app.services.instrument_manager import InstrumentManager
 from app.services.leaderboard import Leaderboard
 from app.services.news import NewsShockSimulator
@@ -21,6 +22,11 @@ instrument_manager = InstrumentManager()
 gbm_manager = GBMManager(
     instrument_manager
 )  # need to be injected to avoid circular dependency
+order_generator = OrderGenerator(
+    instrument_manager=instrument_manager,
+    order_book=order_book,
+    gbm_manager=gbm_manager,
+)
 
 
 def get_price_engine() -> PriceEngine:
@@ -45,3 +51,7 @@ def get_instrument_manager() -> InstrumentManager:
 
 def get_gbm_manager() -> GBMManager:
     return gbm_manager
+
+
+def get_order_generator() -> OrderGenerator:
+    return order_generator

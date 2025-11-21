@@ -11,7 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
-from dependencies import gbm_manager, instrument_manager, news_engine, price_engine
+from dependencies import (
+    gbm_manager,
+    instrument_manager,
+    news_engine,
+    order_generator,
+    price_engine,
+)
 
 # Setup logging
 setup_logging()
@@ -74,6 +80,11 @@ async def startup_event():
     Start news engine to adjust add. drift
     """
     asyncio.create_task(news_engine.add_news_on_tick())
+
+    """
+    Start order generator to place orders every 5 seconds
+    """
+    asyncio.create_task(order_generator.run())
 
 
 @app.websocket("/ws/market")
