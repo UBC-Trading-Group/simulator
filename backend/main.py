@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
-from dependencies import instrument_manager, news_engine, price_engine
+from dependencies import gbm_manager, instrument_manager, news_engine, price_engine
 
 # Setup logging
 setup_logging()
@@ -57,7 +57,8 @@ async def startup_event():
     """
     Initialize instrument manager
     """
-    instrument_manager.initialize_instruments()
+    # TODO: fix DB errors
+    # instrument_manager.initialize_instruments()
 
     """
     Initialize GBM manager
