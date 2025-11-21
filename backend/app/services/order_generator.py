@@ -15,7 +15,6 @@ class OrderGenerator:
         gbm_manager: GBMManager,
         interval_seconds: float = 5.0,
         user_id: str = "generator",
-        tick_size: float = 0.01,
         default_quantity: int = 1,
     ):
         self.instrument_manager = instrument_manager
@@ -23,7 +22,6 @@ class OrderGenerator:
         self.gbm_manager = gbm_manager
         self.interval_seconds = interval_seconds
         self.user_id = user_id
-        self.tick_size = tick_size
         self.default_quantity = default_quantity
         self.is_running = False
 
@@ -54,31 +52,24 @@ class OrderGenerator:
         best_ask_w_clamp = self.order_book.best_ask_within_clamp(ticker)
         best_bid_w_clamp = self.order_book.best_bid_within_clamp(ticker)
 
-        if best_ask_w_clamp is not None and bid_upper is not None:
-            buy_price = max(target_bid, best_ask_w_clamp.price + self.tick_size)
-            buy_price = min(buy_price, bid_upper)
-            if buy_price > 0:
-                buy_order = OrderModel(
-                    price=round(buy_price, 2),
-                    quantity=self.default_quantity,
-                    ticker=ticker,
-                    side=OrderSide.BUY,
-                    user_id=self.user_id,
-                )
-                self.order_book.match_order(buy_order)
+        # TODO: handle the case to shift beyond best ask and bid
+        buy_order = OrderModel(
+            price=round(target_bid, 2),
+            quantity=self.default_quantity,
+            ticker=ticker,
+            side=OrderSide.BUY,
+            user_id=self.user_id,
+        )
+        self.order_book.match_order(buy_order)
 
-        if best_bid_w_clamp is not None and ask_lower is not None:
-            sell_price = min(target_ask, best_bid_w_clamp.price - self.tick_size)
-            sell_price = max(sell_price, ask_lower)
-            if sell_price > 0:
-                sell_order = OrderModel(
-                    price=round(sell_price, 2),
-                    quantity=self.default_quantity,
-                    ticker=ticker,
-                    side=OrderSide.SELL,
-                    user_id=self.user_id,
-                )
-                self.order_book.match_order(sell_order)
+        sell_order = OrderModel(
+            price=round(target_ask, 2),
+            quantity=self.default_quantity,
+            ticker=ticker,
+            side=OrderSide.SELL,
+            user_id=self.user_id,
+        )
+        self.order_book.match_order(sell_order)
 
     async def run(self):
         self.is_running = True
