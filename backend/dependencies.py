@@ -2,11 +2,11 @@ import redis.asyncio as redis
 
 from app.core.config import settings
 from app.services.gbm_manager import GBMManager
-from app.services.order_generator import OrderGenerator
 from app.services.instrument_manager import InstrumentManager
 from app.services.leaderboard import Leaderboard
 from app.services.news import NewsShockSimulator
 from app.services.order_book import OrderBook
+from app.services.order_generator import OrderGenerator
 from app.websocket.price_engine import PriceEngine
 
 """
