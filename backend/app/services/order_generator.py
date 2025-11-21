@@ -33,7 +33,7 @@ class OrderGenerator:
         spread = self._current_spread(ticker)
         if spread is not None and spread > 0:
             return spread
-        return None  # TODO: how to handle this case when we don't have a spread yet?
+        return None
 
     def _process_ticker(self, ticker: str):
         mid_gbm = self.gbm_manager.get_ticker_current_gbm_price(ticker)
@@ -41,6 +41,8 @@ class OrderGenerator:
             return
 
         spread = self._derive_spread(ticker, mid_gbm)
+        if spread is None:
+            return
 
         # place buy and sell orders at new mid-price calculated by GBM +/- spread
         target_bid = mid_gbm - (spread / 2)
@@ -70,7 +72,7 @@ class OrderGenerator:
             try:
                 for instrument in self.instrument_manager.get_all_instruments():
                     ticker = instrument.id
-
+                    self._process_ticker(ticker)
                 await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
                 self.is_running = False
