@@ -95,6 +95,7 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   overflow: hidden;
   resize: both;
+  box-sizing: content-box;
 }
 .widget-header {
   display: flex;
