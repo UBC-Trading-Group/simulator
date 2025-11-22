@@ -45,8 +45,8 @@ class OrderGenerator:
             return
 
         # place buy and sell orders at new mid-price calculated by GBM +/- spread
-        target_bid = mid_gbm - (spread / 2)
-        target_ask = mid_gbm + (spread / 2)
+        target_bid = mid_gbm + (spread / 2)
+        target_ask = mid_gbm - (spread / 2)
 
         buy_order = OrderModel(
             price=round(target_bid, 2),
