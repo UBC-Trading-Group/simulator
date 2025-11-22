@@ -14,11 +14,15 @@ For dependency injections, these are all singletons
 """
 
 news_engine = NewsShockSimulator()
-price_engine = PriceEngine(news_engine=news_engine)
 redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=False)
 leaderboard = Leaderboard(redis_client)
 order_book = OrderBook()
 instrument_manager = InstrumentManager()
+price_engine = PriceEngine(
+    news_engine=news_engine,
+    order_book=order_book,
+    instrument_manager=instrument_manager,
+)
 gbm_manager = GBMManager(
     instrument_manager
 )  # need to be injected to avoid circular dependency

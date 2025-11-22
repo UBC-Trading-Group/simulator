@@ -63,8 +63,7 @@ async def startup_event():
     """
     Initialize instrument manager
     """
-    # TODO: fix DB errors
-    # instrument_manager.initialize_instruments()
+    instrument_manager.initialize_instruments()
 
     """
     Initialize GBM manager
