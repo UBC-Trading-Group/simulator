@@ -73,7 +73,7 @@ class OrderGenerator:
                 for instrument in self.instrument_manager.get_all_instruments():
                     ticker = instrument.id
                     self._process_ticker(ticker)
-                    
+
                     self.order_book.finalize_tick(ticker)
                 await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
