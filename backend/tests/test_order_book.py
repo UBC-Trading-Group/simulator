@@ -183,5 +183,46 @@ class TestOrderBook(TestCase):
         self.assertEqual(len(self.order_book.buys.get("AAPL", [])), 0)
 
 
+    def test_clamp_ignores_extreme_high_bid(self):
+        """Test that placing an outlier bid does not affect mid-price"""
+        # Place 2 normal orders
+        self.order_book.add_order(
+            OrderModel(
+                price=100, quantity=3, ticker="AAPL", user_id="u1", side=OrderSide.BUY
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=102, quantity=3, ticker="AAPL", user_id="u2", side=OrderSide.SELL
+            )
+        )
+
+        # Last traded price set near the mid
+        self.order_book.last_traded_price["AAPL"] = 101
+
+
+        # Compute initial mid for clamp
+        self.order_book.finalize_tick("AAPL")
+
+        print("Mid price before extreme bid:", self.order_book.mid_price("AAPL"))
+
+        #Place an extreme bid outlier
+        self.order_book.add_order(
+            OrderModel(
+                price=100000, quantity=3, ticker="AAPL", user_id="u7", side=OrderSide.BUY
+            )
+        )
+
+        print("Mid price after extreme bid:", self.order_book.mid_price("AAPL"))
+
+        # Best bid with clamp must ignore outlier
+        best_bid_clamped = self.order_book.best_bid_within_clamp("AAPL")
+        self.assertEqual(best_bid_clamped.price, 100)
+
+        # Best bid without clamp should show the outlier
+        best_bid_unclamped = self.order_book.best_bid("AAPL")
+        self.assertEqual(best_bid_unclamped.price, 100000)
+
+
 
 

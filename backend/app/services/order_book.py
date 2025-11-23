@@ -140,21 +140,20 @@ class OrderBook:
 
         return best
 
-    def clamp_range(self, ticker: str) -> Optional[float]:  
-    # We can only compute clamp after one valid trade
+    def clamp_range(self, ticker: str) -> Optional[float]:
+        # Need a previous trade to compute clamp
         if ticker not in self.last_traded_price:
             return None
 
-        # use the clamped mid
-        mid = self.clamped_mid_price(ticker)
-        if mid is None:
-            return None
+        # Use the mid from the previous tick
+        prev_mid = self.previous_mid.get(ticker)
+        if prev_mid is None:
+           return None
 
-        last = self.last_traded_price[ticker]
-
-        
-        return abs(mid - last)
-
+        last_price = self.last_traded_price[ticker]
+        return abs(prev_mid - last_price)
+    
+    
     def bid_clamp(self, ticker: str) -> Optional[float]:
         mid = self.mid_price_for_clamp(ticker)
         if mid is None:
@@ -189,7 +188,7 @@ class OrderBook:
         return self.previous_mid.get(ticker)
     
     def finalize_tick(self, ticker: str):
-        # compute current mid (
+        # compute current mid
         mid = self.mid_price(ticker)
 
         # if we have a real mid, store it as previous_mid for the next clamp_range()
