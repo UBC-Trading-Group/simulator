@@ -8,11 +8,12 @@ class UserState:
     }
     """
 
-    def __init__(self, user_id):
+    def __init__(self, user_id, username):
         self.user_id = user_id
+        self.username = username
         self.cash = 0
 
-        self.portfolio = []  # contains user's portfolio
+        self.portfolio = {}  # contains user's portfolio
         self.unfulfilled_trades = (
             []
         )  # orders that have not been fulfilled or position is not closed
@@ -22,7 +23,8 @@ class UserState:
 
         self.total_shares = 0
         self.prev_avg_price = 0
-        self.total_realized_pnl = 0
+        self.total_realized_pnl = 0.0
+        self.rank = 0
 
     # adds order that has not been closed
     def add_unfulfilled_trade(self, order):
@@ -31,6 +33,10 @@ class UserState:
     # adds order that has been closed and so we call get_avg_price here
     def add_fulfilled_trades(self, order):
         self.fulfilled_trades.append(order)
+
+        if order["ticker"] not in self.portfolio:
+            self.portfolio[order["ticker"]] = []
+
         if order["side"] == "buy":
             self.portfolio[order["ticker"]].append((order["quantity"], order["price"]))
         elif order["side"] == "sell":
@@ -38,7 +44,7 @@ class UserState:
 
     # user sell shares and would remove the shares based on FIFO
     def sell_shares(self, ticker, sell_qty, sell_price):
-        idx = 0
+        realized_pnl = 0.0
 
         remaining = sell_qty
         lots = self.portfolio[ticker]
@@ -46,13 +52,16 @@ class UserState:
         if not lots:
             raise ValueError(f"Ticker {ticker} is not found!")
 
-        for buy_qty, buy_price in lots:
+        while remaining > 0 and lots:
+            buy_qty, buy_price = lots[0]
             if remaining >= buy_qty:
-                lots.pop(0)
+                realized_pnl += (sell_price - buy_price) * buy_qty
                 remaining -= buy_qty
-                idx += 1
+                lots.pop(0)
             else:
-                lots[idx] = (buy_qty - remaining, buy_price)
+                realized_pnl += (sell_price - buy_price) * remaining
+                lots[0] = (buy_qty - remaining, buy_price)
+                remaining = 0
                 break
 
         if remaining > 0:
@@ -60,7 +69,7 @@ class UserState:
                 f"Not enough shares to sell: tried {sell_qty}, only sold {sell_qty - remaining}"
             )
 
-        # TODO calculate realized pnl here
+        self.total_realized_pnl += realized_pnl
 
     def get_avg_price(self, order_price, order_quantity) -> float:
         prev_quantity = self.total_shares
@@ -77,6 +86,11 @@ class UserState:
 
         return avg_price
 
-    # TODO implement pnl calculation
-    def calculate_realized_pnl(self):
-        pass
+    def get_total_realized_pnl(self):
+        return self.total_realized_pnl
+
+    def set_rank(self, rank):
+        self.rank = rank
+
+    def get_rank(self):
+        return self.rank

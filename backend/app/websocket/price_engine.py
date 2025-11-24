@@ -8,19 +8,21 @@ logger = get_logger(__name__)
 
 
 class PriceEngine:
-    def __init__(self, news_engine=None):
+    def __init__(self, news_engine=None, order_book=None, instrument_manager=None):
         # TODO: convert to map, should be ticker -> connections
         # also add another map ticker -> gbm simulator
-        self.active_connections = set()
+        self.active_connections = []
         self.is_running = False
         self.news_engine = news_engine
+        self.order_book = order_book
+        self.instrument_manager = instrument_manager
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections.add(websocket)
+        self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.discard(websocket)
+        self.active_connections.remove(websocket)
 
     def get_additional_drift(self):
         # Inject into calculate
@@ -34,7 +36,7 @@ class PriceEngine:
             return
 
         coros = []
-        for connection in list(self.active_connections):
+        for connection in self.active_connections:
             coros.append(self._safe_send(connection, message))
 
         # Run all concurrently instead of sequentially
@@ -51,7 +53,11 @@ class PriceEngine:
         self.is_running = True
         while self.is_running:
             try:
-                # TODO: Take price from order book instead
+                broadcast_unit = {
+                    ticker.id: self.order_book.mid_price(ticker.id)
+                    for ticker in self.instrument_manager.get_all_instruments()
+                }
+                await self.broadcast(broadcast_unit)
                 await asyncio.sleep(1)
             except asyncio.CancelledError:
                 self.is_running = False
