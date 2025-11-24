@@ -28,8 +28,6 @@ jobs:
     needs: detect
     if: needs.detect.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     services:
       postgres:
         image: postgres:15
