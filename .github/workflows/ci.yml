@@ -66,6 +66,16 @@ jobs:
         run: |
           uv sync --extra test --extra dev
 
+      - name: Check formatting with Black
+        working-directory: backend
+        run: |
+          uv run black . --check
+
+      - name: Check formatting with isort
+        working-directory: backend
+        run: |
+          uv run isort . --check
+
       - name: Run tests
         working-directory: backend
         env:
