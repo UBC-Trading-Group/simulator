@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
-from dependencies import instrument_manager, news_engine, price_engine
+from dependencies import instrument_manager, news_engine, price_engine, gbm_manager
 
 # Setup logging
 setup_logging()

@@ -1,5 +1,6 @@
 from app.db.database import engine
 from app.models.instrument import Instrument
+from sqlmodel import Session, select
 
 
 class InstrumentManager:
