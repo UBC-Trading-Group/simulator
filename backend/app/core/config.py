@@ -2,13 +2,13 @@
 Application configuration settings
 """
 
+import json
 import os
 from typing import List, Optional, Union
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
-import json
 
 class Settings(BaseSettings):
     # Database
