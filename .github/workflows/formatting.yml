@@ -1,0 +1,58 @@
+name: formatting
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+
+      - name: Install uv
+        if: steps.filter.outputs.backend == 'true'
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        if: steps.filter.outputs.backend == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: backend
+        run: |
+          uv sync --extra test --extra dev
+
+      - name: Auto-format with Black and isort
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: backend
+        run: |
+          uv run black .
+          uv run isort .
+
+      - name: Commit formatting changes
+        if: steps.filter.outputs.backend == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "style(backend): auto-format with Black and isort"
+          branch: ${{ github.head_ref || github.ref_name }}
+          file_pattern: backend/**
+
