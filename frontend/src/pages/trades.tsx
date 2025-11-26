@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import PriceChart from "../components/chart";
-import LeaderboardWidget from "../components/LeaderboardWidget";
-import PortfolioWidget from "../components/PortfolioWidget";
-import NewsFeedWidget from "../components/NewsFeedWidget";
-import StocksWidget from "../components/StocksWidget";
-import OrderbookWidget from "../components/OrderbookWidget";
-import BuySellWidget from "../components/BuySellWidget";
+import PriceChart from "../components/widgets/chart";
+import LeaderboardWidget from "../components/widgets/LeaderboardWidget";
+import PortfolioWidget from "../components/widgets/PortfolioWidget";
+import NewsFeedWidget from "../components/widgets/NewsFeedWidget";
+import StocksWidget from "../components/widgets/StocksWidget";
+import OrderbookWidget from "../components/widgets/OrderbookWidget";
+import BuySellWidget from "../components/widgets/BuySellWidget";
 
 type WidgetType =
   | "Leaderboard"
@@ -198,8 +198,8 @@ function WidgetWindow(props: {
       onMouseDown={onFocus}
       data-id={id}
     >
-      <div className="widget-header" onMouseDown={onHeaderMouseDown}>
-        <span className="widget-title">{title}</span>
+      <div className="flex items-center justify-between cursor-move select-none font-bold p-5 bg-white dark:bg-dark-2" onMouseDown={onHeaderMouseDown}>
+        <span className="font-semibold text-text-1 dark:text-text-1-dark text-2xl">{title}</span>
         <button className="widget-close" onClick={onClose} aria-label="Close">
           ×
         </button>

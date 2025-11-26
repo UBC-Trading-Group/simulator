@@ -4,6 +4,33 @@
 @theme {
   --color-brand: #892736;
   --color-page: #F6F6F6;
+
+  /* Brand Colors */
+  --color-tg-brightred: #C43B50;
+  --color-teal: #3BC4AF;
+  --color-light-teal: #EEFEF2;
+  --color-light-grey: #FAFAFA;
+  --color-dark-2: #282541;
+
+  /* Status */
+  --color-success: #19D076;
+  --color-error: #E5363D;
+
+  /* Backgrounds */
+  --color-white: #FFFFFF;
+  --color-dark: #1C1A2E;
+
+  /* Border */
+  --color-ui: #413F51;
+
+  /* Text (Light Mode) */
+  --color-text-1: #1B212D;
+  --color-text-2: #929EAE;
+
+  /* Text (Dark Mode) */
+  --color-text-1-dark: #FFFFFF;
+  --color-text-2-dark: #EDEDED;
+
   --font-sans: system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 

@@ -101,7 +101,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border-soft);
   cursor: move;
   user-select: none;
   font-weight: 700;
@@ -116,7 +115,7 @@
   color: #666;
 }
 .widget-close:hover { color: #000; }
-.widget-body { height: calc(100% - 41px - 24px); padding: 12px; overflow: auto; }
+.widget-body { height: calc(100% - 41px - 24px); overflow: auto; }
 
 /* Login/Register */
 .auth-shell {
