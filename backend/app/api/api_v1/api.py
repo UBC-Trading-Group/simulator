@@ -4,7 +4,7 @@ Main API router for v1 endpoints
 
 from fastapi import APIRouter, Depends
 
-from app.api.api_v1.endpoints import admin, auth, leaderboard, trading, users
+from app.api.api_v1.endpoints import admin, auth, leaderboard, portfolio, trading, users
 from app.core.deps import get_current_active_superuser
 
 api_router = APIRouter()
@@ -22,3 +22,4 @@ api_router.include_router(
     tags=["admin"],
     dependencies=[Depends(get_current_active_superuser)],
 )
+api_router.include_router(portfolio.router, prefix="/portfolio", tags=["portfolio"])
