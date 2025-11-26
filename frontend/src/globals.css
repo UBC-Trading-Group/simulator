@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* Define custom theme tokens */
+@theme {
+  --color-brand: #892736;
+  --color-page: #F6F6F6;
+
+  /* Brand Colors */
+  --color-tg-brightred: #C43B50;
+  --color-teal: #3BC4AF;
+  --color-light-teal: #EEFEF2;
+  --color-light-grey: #FAFAFA;
+  --color-dark-2: #282541;
+
+  /* Status */
+  --color-success: #19D076;
+  --color-error: #E5363D;
+
+  /* Backgrounds */
+  --color-white: #FFFFFF;
+  --color-dark: #1C1A2E;
+
+  /* Border */
+  --color-ui: #413F51;
+
+  /* Text (Light Mode) */
+  --color-text-1: #1B212D;
+  --color-text-2: #929EAE;
+
+  /* Text (Dark Mode) */
+  --color-text-1-dark: #FFFFFF;
+  --color-text-2-dark: #EDEDED;
+
+  --font-sans: system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+/* Base global styles */
+@layer base {
+  :root {
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: light;
+    @apply text-black bg-[--color-page];
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply m-0 min-h-screen;
+  }
+
+  #root {
+    @apply w-full;
+  }
+
+  a {
+    @apply font-medium text-[--color-brand] no-underline;
+  }
+  a:hover {
+    @apply text-[--color-brand];
+  }
+
+  h1 {
+    @apply text-[3.2em] leading-tight;
+  }
+
+  button {
+    @apply rounded-lg border border-transparent px-5 py-2 text-base
+      font-medium bg-white cursor-pointer transition-colors;
+  }
+  button:hover {
+    @apply border-[--color-brand];
+  }
+}
+
+/* Light mode preference override */
+@media (prefers-color-scheme: light) {
+  @layer base {
+    :root {
+      @apply text-[#213547] bg-[--color-page];
+    }
+    button {
+      @apply bg-[#f9f9f9];
+    }
+  }
+}

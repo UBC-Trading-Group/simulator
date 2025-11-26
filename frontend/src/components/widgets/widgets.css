@@ -1,0 +1,55 @@
+.widget-body {
+  overflow: auto;
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #3a3554 #1e1b2e; /* thumb color, track color - For Firefox */
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.widget-body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.widget-body::-webkit-scrollbar-track {
+  background: #1e1b2e; /* Darker background matching widget */
+  border-radius: 4px;
+}
+
+.widget-body::-webkit-scrollbar-thumb {
+  background: #3a3554; /* Lighter purple matching widget header */
+  border-radius: 4px;
+  border: 2px solid #1e1b2e; /* Creates padding effect */
+}
+
+.widget-body::-webkit-scrollbar-thumb:hover {
+  background: #4a4564; /* Slightly lighter on hover */
+}
+
+.widget-body::-webkit-scrollbar-corner {
+  background: #1e1b2e;
+}
+
+/* Optional: Style for the entire trades stage area */
+.trades-stage {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3554 #1e1b2e;
+}
+
+.trades-stage::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.trades-stage::-webkit-scrollbar-track {
+  background: #3a3554;
+}
+
+.trades-stage::-webkit-scrollbar-thumb {
+  background: #3a3554;
+  border-radius: 6px;
+  border: 2px solid #1e1b2e;
+}
+
+.trades-stage::-webkit-scrollbar-thumb:hover {
+  background: #4a4564;
+}
