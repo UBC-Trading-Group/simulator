@@ -174,16 +174,21 @@ function WidgetWindow(props: {
 
   // Track resizes with ResizeObserver so sizes persist
   useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    const ro = new ResizeObserver(entries => {
-      const entry = entries[0];
-      const cr = entry.contentRect;
-      onResize(Math.round(cr.width), Math.round(cr.height));
-    });
-    ro.observe(node);
-    return () => ro.disconnect();
-  }, [onResize]);
+  const node = ref.current;
+  if (!node) return;
+
+  const ro = new ResizeObserver(entries => {
+    const { width: w, height: h } = entries[0].contentRect;
+
+    // prevent jitter / resize loop
+    if (Math.abs(w - width) > 2 || Math.abs(h - height) > 2) {
+      onResize(Math.round(w), Math.round(h));
+    }
+  });
+
+  ro.observe(node);
+  return () => ro.disconnect();
+}, [width, height, onResize]);
 
   return (
     <div
