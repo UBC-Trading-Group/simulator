@@ -106,12 +106,12 @@ function PortfolioWidget() {
   );
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-      <div className="p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow h-full flex flex-col">
+      <div className="p-6 flex-1 flex flex-col min-h-0">
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Portfolio</h3>
         
         {/* Search Bar */}
-        <div className="mb-4">
+        <div className="mb-6 flex-shrink-0">
           <input
             type="text"
             placeholder="Search Transactions"
@@ -122,38 +122,43 @@ function PortfolioWidget() {
         </div>
 
         {/* Portfolio Table */}
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-auto min-h-0">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-300">Stock</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-300">Sector</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-300">Quantity</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-300">Price</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-300">Total Position</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-300">Actions</th>
+            <thead className="sticky top-0 bg-white dark:bg-gray-800">
+              <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Stock</th>
+                <th className="text-left py-3 px-6 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Sector</th>
+                <th className="text-center py-3 px-6 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                <th className="text-right py-3 px-8 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Price</th>
+                <th className="text-right py-3 pr-16 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Total Position</th>
+                <th className="text-center py-3 px-6 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredPositions.map((position) => (
-                <tr key={position.symbol} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="py-4 px-4">
+                <tr key={position.symbol} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                  <td className="py-5 px-4">
                     <div>
                       <div className="font-semibold text-gray-900 dark:text-white">{position.symbol}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{position.full_name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{position.full_name}</div>
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-gray-700 dark:text-gray-300">{position.sector}</td>
-                  <td className="py-4 px-4 text-right text-gray-900 dark:text-white">{position.quantity}</td>
-                  <td className="py-4 px-4 text-right text-gray-900 dark:text-white">${position.price.toFixed(2)}</td>
-                  <td className="py-4 px-4 text-right">
-                    <div className="font-semibold text-gray-900 dark:text-white">${position.total_position.toFixed(2)}</div>
-                    <div className={`text-sm ${position.pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  <td className="py-5 px-6 text-gray-700 dark:text-gray-300">{position.sector}</td>
+                  <td className="py-5 px-6 text-center text-gray-900 dark:text-white font-medium">{position.quantity}</td>
+                  <td className="py-5 px-8 text-right text-gray-900 dark:text-white font-semibold">${position.price.toFixed(2)}</td>
+                  <td className="py-5 pr-16 text-right">
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      ${position.total_position.toFixed(2)}
+                    </div>
+                    <div style={{ color: position.pnl >= 0 ? '#16a34a' : '#dc2626' }} className="text-sm mt-0.5">
                       {position.pnl >= 0 ? '▲' : '▼'} ${Math.abs(position.pnl).toFixed(2)}
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-right">
-                    <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
+                  <td className="py-5 px-6 text-center">
+                    <button 
+                      style={{ backgroundColor: '#7f1d1d', color: '#ffffff' }}
+                      className="px-5 py-2 hover:opacity-90 text-sm font-semibold rounded transition-opacity"
+                    >
                       Close All
                     </button>
                   </td>
@@ -168,5 +173,3 @@ function PortfolioWidget() {
 }
 
 export default PortfolioWidget;
-
-
