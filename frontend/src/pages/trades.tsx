@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PriceChart from "../components/widgets/chart";
 import LeaderboardWidget from "../components/widgets/LeaderboardWidget";
-import PortfolioWidget from "../components/PortfolioWidget";
+import PortfolioWidget from "../components/widgets/PortfolioWidget";
 import NewsFeedWidget from "../components/widgets/NewsFeedWidget";
 import StocksWidget from "../components/widgets/StocksWidget";
 import OrderbookWidget from "../components/widgets/OrderbookWidget";

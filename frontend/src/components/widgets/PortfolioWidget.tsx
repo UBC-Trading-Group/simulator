@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Position {
   symbol: string;
@@ -60,7 +60,7 @@ function PortfolioWidget() {
     fetchPortfolio();
     
     // Refresh every 5 seconds
-    const interval = setInterval(fetchPortfolio, 5000);
+    const interval = setInterval(fetchPortfolio, 1500);
     return () => clearInterval(interval);
   }, [token, isAuthenticated]);
 
