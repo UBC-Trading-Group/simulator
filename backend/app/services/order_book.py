@@ -179,20 +179,18 @@ class OrderBook:
         highest_bid = self.best_bid_within_clamp(ticker)
         lowest_ask = self.best_ask_within_clamp(ticker)
         if highest_bid and lowest_ask:
-            return (highest_bid.price + lowest_ask.price) / 2
+            mid = (highest_bid.price + lowest_ask.price) / 2
+
+            # Update previous mid **inside** mid_price
+            self.previous_mid[ticker] = mid
+
+            return mid
         return None
 
+  
     def mid_price_for_clamp(self, ticker: str) -> Optional[float]:
         """Return the mid price from the previous tick, used ONLY for clamp."""
         return self.previous_mid.get(ticker)
-
-    def finalize_tick(self, ticker: str):
-        # compute current mid
-        mid = self.mid_price(ticker)
-
-        # if we have a real mid, store it as previous_mid for the next clamp_range()
-        if mid is not None:
-            self.previous_mid[ticker] = mid
 
     def match_order(self, order: OrderModel) -> tuple[OrderStatus, int]:
         """
