@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
+from backend.app.services import lb_manager
 from dependencies import (
     gbm_manager,
     instrument_manager,
@@ -79,6 +80,11 @@ async def startup_event():
     Start news engine to adjust add. drift
     """
     asyncio.create_task(news_engine.add_news_on_tick())
+
+    """
+    Start liquidity bots
+    """
+    asyncio.create_task(lb_manager.run())
 
     """
     Start order generator to place orders every 5 seconds
