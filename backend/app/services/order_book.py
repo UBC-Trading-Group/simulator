@@ -187,7 +187,6 @@ class OrderBook:
             return mid
         return None
 
-  
     def mid_price_for_clamp(self, ticker: str) -> Optional[float]:
         """Return the mid price from the previous tick, used ONLY for clamp."""
         return self.previous_mid.get(ticker)

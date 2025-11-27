@@ -225,119 +225,113 @@ class TestOrderBook(TestCase):
         best_bid_unclamped = self.order_book.best_bid("AAPL")
         self.assertEqual(best_bid_unclamped.price, 100000)
 
-
-
     def test_clamp_ignores_extreme_high_ask(self):
         """Test that placing an outlier ask does not affect mid-price"""
         # Place 2 normal orders
         self.order_book.add_order(
             OrderModel(
                 price=100, quantity=3, ticker="AAPL", user_id="u1", side=OrderSide.BUY
-               )
             )
-        
+        )
+
         self.order_book.add_order(
             OrderModel(
                 price=102, quantity=3, ticker="AAPL", user_id="u2", side=OrderSide.SELL
-                )
             )
-        
+        )
+
         # Last traded price set near the mid
         self.order_book.last_traded_price["AAPL"] = 101
-      
+
         # Compute initial mid for clamp
         self.order_book.mid_price("AAPL")
 
-
         print("Mid price before extreme ask:", self.order_book.mid_price("AAPL"))
 
-
-        #Place an extreme ask outlier
+        # Place an extreme ask outlier
         self.order_book.add_order(
             OrderModel(
-                price=100000, quantity=3, ticker="AAPL", user_id="u6", side=OrderSide.SELL
-                    )
-                )
-        
-        print("Mid price after extreme ask:", self.order_book.mid_price("AAPL"))
+                price=100000,
+                quantity=3,
+                ticker="AAPL",
+                user_id="u6",
+                side=OrderSide.SELL,
+            )
+        )
 
+        print("Mid price after extreme ask:", self.order_book.mid_price("AAPL"))
 
         # Best ask with clamp must ignore outlier
         best_ask_clamped = self.order_book.best_ask_within_clamp("AAPL")
         self.assertEqual(best_ask_clamped.price, 102)
 
-
         # Best ask without clamp should show the best ask which is 102
         best_ask_unclamped = self.order_book.best_ask("AAPL")
         self.assertEqual(best_ask_unclamped.price, 102)
 
-
-
-
-
-
-  
     def test_clamp_ignores_extreme_low_bid(self):
         """Test that placing an extremely low bid does not affect mid-price"""
-       # Place 2 normal orders
+        # Place 2 normal orders
         self.order_book.add_order(
-           OrderModel(price=100, quantity=3, ticker="AAPL", user_id="u1", side=OrderSide.BUY)
+            OrderModel(
+                price=100, quantity=3, ticker="AAPL", user_id="u1", side=OrderSide.BUY
+            )
         )
         self.order_book.add_order(
-           OrderModel(price=102, quantity=3, ticker="AAPL", user_id="u2", side=OrderSide.SELL)
+            OrderModel(
+                price=102, quantity=3, ticker="AAPL", user_id="u2", side=OrderSide.SELL
+            )
         )
 
-
-       # Last traded price near mid
+        # Last traded price near mid
         self.order_book.last_traded_price["AAPL"] = 101
         self.order_book.mid_price("AAPL")
 
-
-       # Add extremely low bid
+        # Add extremely low bid
         self.order_book.add_order(
-            OrderModel(price=0.1, quantity=3, ticker="AAPL", user_id="u3", side=OrderSide.BUY)
+            OrderModel(
+                price=0.1, quantity=3, ticker="AAPL", user_id="u3", side=OrderSide.BUY
+            )
         )
-
 
         # Best bid within clamp ignores extreme low
         best_bid_clamped = self.order_book.best_bid_within_clamp("AAPL")
         assert best_bid_clamped.price == 100
 
-
         # Best bid without clamp should show the best bid which is 100, not 0.1
         best_bid_unclamped = self.order_book.best_bid("AAPL")
         self.assertEqual(best_bid_unclamped.price, 100)
-
-
 
     def test_clamp_ignores_extreme_low_ask(self):
         """Test that placing an extremely low ask does not affect mid-price"""
         # Place 2 normal orders
 
         self.order_book.add_order(
-            OrderModel(price=100, quantity=3, ticker="AAPL", user_id="u1", side=OrderSide.BUY)
+            OrderModel(
+                price=100, quantity=3, ticker="AAPL", user_id="u1", side=OrderSide.BUY
             )
-       
+        )
+
         self.order_book.add_order(
-            OrderModel(price=102, quantity=3, ticker="AAPL", user_id="u2", side=OrderSide.SELL)
+            OrderModel(
+                price=102, quantity=3, ticker="AAPL", user_id="u2", side=OrderSide.SELL
             )
+        )
 
-
-       # Last traded price near mid
+        # Last traded price near mid
         self.order_book.last_traded_price["AAPL"] = 101
         self.order_book.mid_price("AAPL")
 
-
-       # Add extremely low ask
+        # Add extremely low ask
         self.order_book.add_order(
-            OrderModel(price=0.1, quantity=3, ticker="AAPL", user_id="u4", side=OrderSide.SELL)
+            OrderModel(
+                price=0.1, quantity=3, ticker="AAPL", user_id="u4", side=OrderSide.SELL
             )
-
+        )
 
         # Best ask within clamp ignores extreme low
         best_ask_clamped = self.order_book.best_ask_within_clamp("AAPL")
         assert best_ask_clamped.price == 102
-
 
         # Best ask without clamp should show the best ask which is the outlier 0.1
         best_ask_unclamped = self.order_book.best_ask("AAPL")
