@@ -62,11 +62,6 @@ async def version_check():
 @app.on_event("startup")
 async def startup_event():
     """
-    Initialize instrument manager
-    """
-    instrument_manager.initialize_instruments()
-
-    """
     Initialize GBM manager
     """
     asyncio.create_task(gbm_manager.run())

@@ -191,7 +191,9 @@ class OrderBook:
         """Return the mid price from the previous tick, used ONLY for clamp."""
         return self.previous_mid.get(ticker)
 
-    def match_order(self, order: OrderModel) -> tuple[OrderStatus, int]:
+    def match_order(
+        self, order: OrderModel, is_liquidity_bot: bool = False
+    ) -> tuple[OrderStatus, int]:
         """
         Matches buy with corresponding sell orders, or sell with buy orders.
         Matching is price-priority based (max bid vs min ask), partial fills allowed.
@@ -212,7 +214,8 @@ class OrderBook:
             is_buy = False
 
         # If no opposite orders, just add to book
-        if not opposite_heap:
+        # Liquidity bot orders are added to book without matching
+        if not opposite_heap or is_liquidity_bot:
             self.add_order(order)
             return OrderStatus.OPEN, initial_quantity
 
