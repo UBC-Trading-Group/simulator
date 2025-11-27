@@ -41,6 +41,7 @@ class OrderBook:
         self.PRICE_IDX = 0
         self.QUANTITY_IDX = 1
         self.ORDER_OBJ_IDX = 2
+        self.previous_mid = {}
 
     def _get_book(
         self, ticker: str, side: OrderSide
@@ -144,15 +145,16 @@ class OrderBook:
         if ticker not in self.last_traded_price:
             return None
 
-        mid = self.mid_price(ticker)
-        if mid is None:
+        # Use the mid from the previous tick
+        prev_mid = self.previous_mid.get(ticker)
+        if prev_mid is None:
             return None
 
-        last = self.last_traded_price[ticker]
-        return abs(mid - last)
+        last_price = self.last_traded_price[ticker]
+        return abs(prev_mid - last_price)
 
     def bid_clamp(self, ticker: str) -> Optional[float]:
-        mid = self.mid_price(ticker)
+        mid = self.mid_price_for_clamp(ticker)
         if mid is None:
             return None
 
@@ -163,7 +165,7 @@ class OrderBook:
         return mid + clamp_range * self.CLAMPED_DELTA_COEFF
 
     def ask_clamp(self, ticker: str) -> Optional[float]:
-        mid = self.mid_price(ticker)
+        mid = self.mid_price_for_clamp(ticker)
         if mid is None:
             return None
 
@@ -174,11 +176,20 @@ class OrderBook:
         return mid - clamp_range * self.CLAMPED_DELTA_COEFF
 
     def mid_price(self, ticker: str) -> Optional[float]:
-        highest_bid = self.best_bid(ticker)
-        lowest_ask = self.best_ask(ticker)
+        highest_bid = self.best_bid_within_clamp(ticker)
+        lowest_ask = self.best_ask_within_clamp(ticker)
         if highest_bid and lowest_ask:
-            return (highest_bid.price + lowest_ask.price) / 2
+            mid = (highest_bid.price + lowest_ask.price) / 2
+
+            # Update previous mid **inside** mid_price
+            self.previous_mid[ticker] = mid
+
+            return mid
         return None
+
+    def mid_price_for_clamp(self, ticker: str) -> Optional[float]:
+        """Return the mid price from the previous tick, used ONLY for clamp."""
+        return self.previous_mid.get(ticker)
 
     def match_order(self, order: OrderModel) -> tuple[OrderStatus, int]:
         """
