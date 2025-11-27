@@ -11,10 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
-from backend.app.services import lb_manager
 from dependencies import (
     gbm_manager,
     instrument_manager,
+    lb_manager,
     news_engine,
     order_generator,
     price_engine,
