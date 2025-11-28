@@ -1,0 +1,55 @@
+Cursor Rules - API Payload Debug Workflow
+
+Goal
+- When a user provides an API endpoint and payload that fails, follow a strict, deterministic workflow to diagnose and fix the issue in the backend.
+
+Workflow
+1) Single pre-fix test:
+   - Send exactly one test request using the provided endpoint and payload.
+   - Use the MCP server tool "test_endpoint" (from server "docker-error-mcp").
+   - Do not retry before attempting a fix, even if the API is starting up.
+   - Record the response. This captures the baseline failure.
+
+2) Fix in backend:
+   - Diagnose the failure using code search over the backend.
+   - Make minimal, targeted edits in the backend code (under `backend/`) to fix the root cause.
+   - Prefer not to ask the user for details if discoverable via the codebase.
+   - Use absolute paths when referencing files and keep existing formatting.
+
+3) Restart the API:
+   - Run the MCP tool "start_docker" to rebuild/restart the API container with the updated code.
+   - Do not run any other service restarts unless necessary.
+
+4) Retest with the same input:
+   - Re-run the exact same endpoint and payload using "test_endpoint".
+   - Ensure the payload is unchanged (no accidental mutation).
+
+5) Compare logs to verify fix:
+   - Run the MCP tool "compare_error_logs" (alias: compare_logs) to diff the two most recent api log snapshots.
+   - Confirm that differences correlate with the originally observed error.
+
+Reporting
+- Provide a concise summary:
+  - Initial failure (status/body) from the single pre-fix test
+  - Files and functions edited in `backend/` and the rationale
+  - Post-fix test result with status/body
+  - Log diff highlights from "compare_error_logs"
+
+Operational details
+- Default host: http://localhost:8000 unless the user specifies otherwise.
+- Authentication is handled by "test_endpoint" (password grant with default admin/pass envs) — do not add extra auth steps.
+- Use absolute paths when invoking tools or referencing files (e.g., `/Users/akyukii/simulator/backend/...`).
+- Only perform one pre-fix test. After code changes and restart, perform one post-fix test, then run the log comparison.
+- If the API is not ready during the single pre-fix test, proceed to fix anyway; do not loop on retries before the fix.
+
+Tooling map (MCP: docker-error-mcp)
+- test_endpoint: POST/GET/etc request with JSON payload (auto-auth). Inputs: endpoint, payload, method (default POST), host.
+- start_docker: Recreate and start the API compose service (`api`).
+- compare_error_logs: Diff the two most recent `backend/mcp/temp/*.log` files captured during requests.
+
+Quality and style
+- Make edits with clear, readable code and minimal surface area.
+- Avoid deep nesting and unnecessary try/catch.
+- Keep comments only for non-obvious rationale and edge cases.
+
+
