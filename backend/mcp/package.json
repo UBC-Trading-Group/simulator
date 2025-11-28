@@ -1,0 +1,15 @@
+{
+  "name": "docker-error-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for running Dockerized tests, capturing error logs as JSON, and diffing before/after traces.",
+  "main": "server.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
+
+

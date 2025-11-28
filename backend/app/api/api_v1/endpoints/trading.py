@@ -2,14 +2,16 @@
 Trading endpoints (example of protected endpoints)
 """
 
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from app.core.deps import get_current_active_user
 from app.db.database import get_db
+from app.schemas.order import TradingOrderRequest
 from app.schemas.user import UserInDB
+from app.services.latency_profile import normalize_latency_curve
 
 router = APIRouter()
 
@@ -37,29 +39,27 @@ def get_portfolio(
 
 @router.post("/orders")
 def create_order(
-    symbol: str,
-    quantity: int,
-    order_type: str = "buy",
+    order: TradingOrderRequest,
     current_user: UserInDB = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> dict:
     """
     Create a trading order (requires authentication)
     """
-    if order_type not in ["buy", "sell"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Order type must be 'buy' or 'sell'",
-        )
+    latency_curve: Optional[List[float]] = None
+    if order.latency_profile:
+        latency_curve = normalize_latency_curve(order.latency_profile)
 
     # This is just an example - in a real app you'd validate and create the order
     return {
-        "order_id": f"order_{current_user.id}_{symbol}_{quantity}",
+        "order_id": f"order_{current_user.id}_{order.symbol}_{order.quantity}",
         "user_id": current_user.id,
-        "symbol": symbol,
-        "quantity": quantity,
-        "type": order_type,
+        "symbol": order.symbol,
+        "quantity": order.quantity,
+        "type": order.order_type,
         "status": "pending",
+        "latency_profile": order.latency_profile,
+        "latency_curve": latency_curve,
         "message": "Order created successfully",
     }
 

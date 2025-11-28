@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -26,3 +27,10 @@ class OrderModel(BaseModel):
 
     class Config:
         validate_assignment = True
+
+
+class TradingOrderRequest(BaseModel):
+    symbol: str
+    quantity: int = Field(..., ge=1)
+    order_type: OrderSide = OrderSide.BUY
+    latency_profile: Optional[str] = None
