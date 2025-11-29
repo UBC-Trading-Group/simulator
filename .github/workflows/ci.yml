@@ -85,7 +85,7 @@ jobs:
       - name: Run tests
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://sim:sim@localhost:5432/simdb
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           uv run pytest
 
