@@ -122,7 +122,7 @@ server.registerTool(
       endpoint: z
         .string()
         .describe(
-          "The API endpoint URL to test, e.g., '/api/v1/trading/orders' or full URL 'http://localhost:8000/api/v1/trading/orders'"
+          "The API endpoint URL to test"
         ),
       payload: z
         .object({})
