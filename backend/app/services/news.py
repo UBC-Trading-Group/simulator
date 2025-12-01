@@ -28,7 +28,7 @@ class NewsShockSimulator:
     def get_all_news(self):
         return self.news_objects
 
-    def get_candidate_news(self):
+    def get_candidate_news(self) -> List[NewsEvent]:
         curr_time_ms = int(time.time() * 1000)
         return [
             news
@@ -37,7 +37,7 @@ class NewsShockSimulator:
             and news.id not in self.active_news_ids
         ]
 
-    def get_random_news(self):
+    def get_random_news(self) -> Optional[NewsEvent]:
         candidates = self.get_candidate_news()
         if not candidates:
             return None
@@ -50,10 +50,10 @@ class NewsShockSimulator:
     Exponential decay formula
     """
 
-    def calculate(self, news):
+    def calculate(self, news: NewsEvent) -> float:
         try:
             if not news:
-                return 0
+                return 0.0
 
             now_s = time.time()
             t0_s = news.get("ts_release_ms", 0) / 1000
@@ -73,10 +73,10 @@ class NewsShockSimulator:
             return eff
         except Exception as e:
             logger.error(f"Error calculating news effect: {e}", exc_info=True)
-            return 0
+            return 0.0
 
-    def get_total_eff(self):
-        total_eff = 0  # 0 is the baseline
+    def get_total_eff(self) -> float:
+        total_eff = 0.0  # 0.0 is the baseline
         for news_object in self.get_all_news():
 
             # Effect should only be calculated based on currently ACTIVE news in effect
