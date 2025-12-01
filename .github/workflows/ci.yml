@@ -86,6 +86,9 @@ jobs:
       - name: Start services for API tests
         run: docker compose -f docker-compose.yml up -d db redis api
 
+      - name: Run database migrations
+        run: docker compose -f docker-compose.yml exec -T api bash -lc "uv run alembic upgrade head"
+
       - name: Wait for API health
         run: |
           set -euo pipefail
