@@ -1,7 +1,11 @@
 from unittest import TestCase
 
+import pytest
+
 from app.schemas.order import OrderModel, OrderSide, OrderStatus
 from app.services.order_book import OrderBook
+
+pytestmark = pytest.mark.unit
 
 
 class TestOrderBook(TestCase):

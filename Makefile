@@ -60,11 +60,25 @@ migrate-create: ## Create a new migration (usage: make migrate-create MESSAGE="d
 	docker-compose exec api uv run alembic revision --autogenerate -m "$(MESSAGE)"
 
 # Testing commands
-test: ## Run tests
-	docker-compose exec api uv run pytest
+TEST_PYTEST ?=
+TEST_ENV := API_BASE_URL=http://localhost:8000
+
+.PHONY: test test-unit test-api test-all
+
+test: test-all ## Default test target (all suites)
+
+test-unit: ## Run unit tests inside the API container
+	docker compose exec -T api bash -lc "uv run pytest -m unit $(TEST_PYTEST)"
+
+test-api: ## Run API tests against the running container
+	docker compose exec -T api bash -lc "$(TEST_ENV) uv run pytest -m api $(TEST_PYTEST)"
+
+test-all: ## Run unit then API tests (default)
+	docker compose exec -T api bash -lc "uv run pytest -m unit $(TEST_PYTEST)"
+	docker compose exec -T api bash -lc "$(TEST_ENV) uv run pytest -m api $(TEST_PYTEST)"
 
 test-cov: ## Run tests with coverage
-	docker-compose exec api uv run pytest --cov=app
+	docker compose exec -T api bash -lc "$(TEST_ENV) uv run pytest --cov=app"
 
 # Formatting commands
 format: ## Format code with isort and black
