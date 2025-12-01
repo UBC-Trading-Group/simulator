@@ -10,7 +10,7 @@ datastores.
 | ------------------- | -------------------------------------------------- |
 | `tests/unit`        | Deterministic unit tests with no external services |
 | `tests/api`         | API smoke/contract tests that hit HTTP endpoints   |
-| `tests/conftest.py` | Shared pytest fixtures and helpers                 |
+| `tests/api/conftest.py` | Shared API fixtures and helpers                |
 
 Both suites use pytest markers:
 
@@ -56,7 +56,7 @@ uv run pytest --cov=app --cov-report=html
 ## Adding new tests
 
 1. Choose the right directory (`tests/unit` for pure Python, `tests/api` for HTTP).
-2. Import shared fixtures from `tests/conftest.py`.
+2. Import shared fixtures from `tests/api/conftest.py`.
 3. Add the appropriate marker at file or test level.
 
 API tests should rely on the provided `http_client` fixture rather than the
