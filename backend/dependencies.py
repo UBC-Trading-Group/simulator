@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.services.gbm_manager import GBMManager
 from app.services.instrument_manager import InstrumentManager
 from app.services.leaderboard import Leaderboard
+from app.services.liquidity_bot_manager import LiquidityBotManager
 from app.services.news import NewsShockSimulator
 from app.services.order_book import OrderBook
 from app.services.order_generator import OrderGenerator
@@ -30,6 +31,10 @@ order_generator = OrderGenerator(
     instrument_manager=instrument_manager,
     order_book=order_book,
     gbm_manager=gbm_manager,
+)
+lb_manager = LiquidityBotManager(
+    instruments=instrument_manager.get_all_instruments(),
+    order_book=order_book,
 )
 
 
@@ -59,3 +64,7 @@ def get_gbm_manager() -> GBMManager:
 
 def get_order_generator() -> OrderGenerator:
     return order_generator
+
+
+def get_liquidity_bot_manager() -> LiquidityBotManager:
+    return lb_manager

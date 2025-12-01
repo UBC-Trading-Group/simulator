@@ -14,6 +14,7 @@ from app.core.logging import setup_logging
 from dependencies import (
     gbm_manager,
     instrument_manager,
+    lb_manager,
     news_engine,
     order_generator,
     price_engine,
@@ -61,11 +62,6 @@ async def version_check():
 @app.on_event("startup")
 async def startup_event():
     """
-    Initialize instrument manager
-    """
-    instrument_manager.initialize_instruments()
-
-    """
     Initialize GBM manager
     """
     asyncio.create_task(gbm_manager.run())
@@ -79,6 +75,11 @@ async def startup_event():
     Start news engine to adjust add. drift
     """
     asyncio.create_task(news_engine.add_news_on_tick())
+
+    """
+    Start liquidity bots
+    """
+    asyncio.create_task(lb_manager.run())
 
     """
     Start order generator to place orders every 5 seconds
