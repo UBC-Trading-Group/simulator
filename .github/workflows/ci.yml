@@ -80,9 +80,6 @@ jobs:
       - name: Build backend image
         run: docker compose -f docker-compose.yml build api
 
-      - name: Run backend unit tests (docker)
-        run: docker compose -f docker-compose.yml run --rm api bash -lc "uv run pytest -m unit"
-
       - name: Start services for API tests
         run: docker compose -f docker-compose.yml up -d db redis api
 
@@ -105,7 +102,7 @@ jobs:
           exit 1
 
       - name: Run backend API tests (docker)
-        run: docker compose -f docker-compose.yml exec -T api bash -lc "API_BASE_URL=http://localhost:8000 uv run pytest -m api"
+        run: docker compose -f docker-compose.yml exec -T api bash -lc "API_BASE_URL=http://localhost:8000 uv run pytest"
 
       - name: Tear down docker services
         if: always()

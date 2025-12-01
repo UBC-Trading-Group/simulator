@@ -17,6 +17,7 @@ Both suites use pytest markers:
 - `@pytest.mark.unit` — run with `pytest -m unit`
 - `@pytest.mark.api` — run with `pytest -m api` (requires a live API)
 
+BOTH TESTS ACTUALLY REQUIRE LIVE API LOL (this is a todo)
 ## Running tests locally
 
 All helper commands live under `backend/scripts/run_tests.sh`.
