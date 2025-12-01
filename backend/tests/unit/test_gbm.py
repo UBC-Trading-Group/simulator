@@ -5,7 +5,6 @@ import pytest
 
 from app.services.gbm import GeometricBrownianMotionAssetSimulator
 
-
 pytestmark = pytest.mark.unit
 
 
