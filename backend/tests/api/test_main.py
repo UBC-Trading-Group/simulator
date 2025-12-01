@@ -4,7 +4,6 @@ Basic end-to-end checks for the running API service.
 
 import pytest
 
-
 pytestmark = pytest.mark.api
 
 
