@@ -30,20 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: sim
-          POSTGRES_PASSWORD: sim
-          POSTGRES_DB: simdb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
@@ -82,12 +68,39 @@ jobs:
           branch: ${{ github.head_ref || github.ref_name }}
           file_pattern: backend/**
 
-      - name: Run tests
-        working-directory: backend
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Check Docker Compose
+        run: docker compose version
+
+      - name: Build backend image
+        run: docker compose -f docker-compose.yml build api
+
+      - name: Run backend unit tests (docker)
+        run: docker compose -f docker-compose.yml run --rm api bash -lc "uv run pytest -m unit"
+
+      - name: Start services for API tests
+        run: docker compose -f docker-compose.yml up -d db redis api
+
+      - name: Wait for API health
         run: |
-          uv run pytest
+          set -euo pipefail
+          for attempt in {1..30}; do
+            if curl -fsS http://localhost:8000/health >/dev/null; then
+              echo "API is healthy"
+              exit 0
+            fi
+            echo "Waiting for API to become healthy (attempt ${attempt})..."
+            sleep 2
+          done
+          echo "API failed to become healthy" >&2
+          docker compose -f docker-compose.yml logs api
+          exit 1
+
+      - name: Run backend API tests (docker)
+        run: docker compose -f docker-compose.yml exec -T api bash -lc "API_BASE_URL=http://localhost:8000 uv run pytest -m api"
+
+      - name: Tear down docker services
+        if: always()
+        run: docker compose -f docker-compose.yml down -v
 
   frontend:
     needs: detect

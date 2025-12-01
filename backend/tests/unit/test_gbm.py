@@ -1,8 +1,12 @@
 from unittest import TestCase
 
 import numpy as np
+import pytest
 
 from app.services.gbm import GeometricBrownianMotionAssetSimulator
+
+
+pytestmark = pytest.mark.unit
 
 
 class TestGeometricBrownianMotionAssetSimulator(TestCase):
