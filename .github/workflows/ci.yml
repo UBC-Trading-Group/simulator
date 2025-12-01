@@ -68,6 +68,12 @@ jobs:
           branch: ${{ github.head_ref || github.ref_name }}
           file_pattern: backend/**
 
+      - name: Create backend .env
+        run: |
+          cat <<'EOF' > backend/.env
+          # Placeholder environment for CI; populate via GitHub secrets as needed.
+          EOF
+
       - name: Check Docker Compose
         run: docker compose version
 
