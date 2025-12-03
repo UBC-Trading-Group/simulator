@@ -56,7 +56,7 @@ class OrderBook:
                 self.sells[ticker] = []
             return self.sells[ticker]
 
-    def add_order(self, order: OrderModel) -> None:        
+    def add_order(self, order: OrderModel) -> None:
         price = order.price
         side = order.side
         ticker = order.ticker

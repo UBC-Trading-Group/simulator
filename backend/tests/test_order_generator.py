@@ -1,12 +1,12 @@
-from unittest import TestCase
 import asyncio
+from unittest import TestCase
 
-from app.services.order_generator import OrderGenerator
-from app.services.order_book import OrderBook
-from app.services.instrument_manager import InstrumentManager
+from app.schemas.order import OrderModel, OrderSide
 from app.services.gbm_manager import GBMManager
-from app.schemas.order import OrderSide
-from app.schemas.order import OrderModel
+from app.services.instrument_manager import InstrumentManager
+from app.services.order_book import OrderBook
+from app.services.order_generator import OrderGenerator
+
 
 class TestOrderGenerator(TestCase):
     def setUp(self):
@@ -44,7 +44,7 @@ class TestOrderGenerator(TestCase):
         self.instrument_manager = type(
             "DummyIM",
             (),
-            {"get_all_instruments": lambda self: [DummyInstrument("AAPL")]}
+            {"get_all_instruments": lambda self: [DummyInstrument("AAPL")]},
         )()
 
         # Create OrderGenerator instance
@@ -52,7 +52,7 @@ class TestOrderGenerator(TestCase):
             instrument_manager=self.instrument_manager,
             order_book=self.order_book,
             gbm_manager=self.gbm_manager,
-            interval_seconds=0.01,  
+            interval_seconds=0.01,
         )
 
     # Test the current spread when there are no orders, should be none
@@ -90,30 +90,54 @@ class TestOrderGenerator(TestCase):
         spread = self.generator._derive_spread("AAPL")
         self.assertIsNone(spread)
 
-
-
     def test_process_ticker_match_created_order_2_sells(self):
-        """ _process_ticker should create orders and match them leaving 2 sells """
+        """_process_ticker should create orders and match them leaving 2 sells"""
 
-          # Initial orders
-        self.order_book.add_order(OrderModel(price=90, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"))
-        self.order_book.add_order(OrderModel(price=110, quantity=2, ticker="AAPL", side=OrderSide.SELL, user_id="u2"))
+        # Initial orders
+        self.order_book.add_order(
+            OrderModel(
+                price=90, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=110, quantity=2, ticker="AAPL", side=OrderSide.SELL, user_id="u2"
+            )
+        )
 
         # Set previous mid so spread calculation works
         self.order_book.previous_mid["AAPL"] = 100
-        self.order_book.last_traded_price["AAPL"] = 102 
+        self.order_book.last_traded_price["AAPL"] = 102
 
         # Call _process_ticker
         print("Before _process_ticker:")
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
-        #The orders generated should match1 of the 110 sell and leave the other one
+        # The orders generated should match1 of the 110 sell and leave the other one
         self.generator._process_ticker("AAPL")
 
         print("After _process_ticker:")
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
         buys = self.order_book.buys["AAPL"]
         sells = self.order_book.sells["AAPL"]
@@ -122,27 +146,52 @@ class TestOrderGenerator(TestCase):
         self.assertEqual(len(sells), 2)
 
     def test_process_ticker_match_created_order_2_buys(self):
-        """ _process_ticker should create orders and match them leaving 2 buys """
+        """_process_ticker should create orders and match them leaving 2 buys"""
 
-          # Initial orders
-        self.order_book.add_order(OrderModel(price=95, quantity=2, ticker="AAPL", side=OrderSide.BUY, user_id="u1"))
-        self.order_book.add_order(OrderModel(price=110, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"))
+        # Initial orders
+        self.order_book.add_order(
+            OrderModel(
+                price=95, quantity=2, ticker="AAPL", side=OrderSide.BUY, user_id="u1"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=110, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"
+            )
+        )
 
         # Set previous mid so spread calculation works
         self.order_book.previous_mid["AAPL"] = 100
-        self.order_book.last_traded_price["AAPL"] = 102 
+        self.order_book.last_traded_price["AAPL"] = 102
 
         # Call _process_ticker
         print("Before _process_ticker:")
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
-     
         self.generator._process_ticker("AAPL")
 
         print("After _process_ticker:")
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
         buys = self.order_book.buys["AAPL"]
         sells = self.order_book.sells["AAPL"]
@@ -151,30 +200,54 @@ class TestOrderGenerator(TestCase):
         self.assertEqual(len(buys), 1)
         self.assertEqual(len(sells), 1)
 
-
-
     def test_process_ticker_match_created_orders(self):
-        """" _process_ticker should create orders and match them"""""
+        """" _process_ticker should create orders and match them""" ""
 
-          # Initial orders
-        self.order_book.add_order(OrderModel(price=90, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"))
-        self.order_book.add_order(OrderModel(price=110, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"))
+        # Initial orders
+        self.order_book.add_order(
+            OrderModel(
+                price=90, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=110, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"
+            )
+        )
 
         # Set previous mid so spread calculation works
         self.order_book.previous_mid["AAPL"] = 100
-        self.order_book.last_traded_price["AAPL"] = 102 
+        self.order_book.last_traded_price["AAPL"] = 102
 
         # Call _process_ticker
         print("Before _process_ticker:")
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
-        #The orders generated should match1 of the 110 sell and leave the other one
+        # The orders generated should match1 of the 110 sell and leave the other one
         self.generator._process_ticker("AAPL")
 
         print("After _process_ticker:")
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
         buys = self.order_book.buys["AAPL"]
         sells = self.order_book.sells["AAPL"]
@@ -182,15 +255,23 @@ class TestOrderGenerator(TestCase):
         self.assertEqual(len(buys), 1)
         self.assertEqual(len(sells), 1)
 
-
     def test_run_once(self):
         # Test running the async generator for a short time
-        self.order_book.add_order(OrderModel(price=90, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"))
-        self.order_book.add_order(OrderModel(price=110, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"))
+        self.order_book.add_order(
+            OrderModel(
+                price=90, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=110, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"
+            )
+        )
 
         # Set previous mid and last traded price so spread calculation works
         self.order_book.previous_mid["AAPL"] = 100
         self.order_book.last_traded_price["AAPL"] = 110
+
         async def run_once():
             # Run only one loop manually
             self.generator.is_running = True
@@ -204,9 +285,9 @@ class TestOrderGenerator(TestCase):
         self.assertEqual(len(self.order_book.buys["AAPL"]), 1)
         self.assertEqual(len(self.order_book.sells["AAPL"]), 1)
 
-
     def test_process_ticker_no_gbm_price(self):
         """_process_ticker does nothing if GBM returns None"""
+
         class DummyGBMNone:
             def get_ticker_current_gbm_price(self, ticker):
                 return None
@@ -218,12 +299,18 @@ class TestOrderGenerator(TestCase):
         self.assertNotIn("AAPL", self.order_book.buys)
         self.assertNotIn("AAPL", self.order_book.sells)
 
-
-
     def test_process_ticker_partial_match_quantity(self):
         """_process_ticker partially matches existing orders and updates quantities"""
-        self.order_book.add_order(OrderModel(price=95, quantity=2, ticker="AAPL", side=OrderSide.BUY, user_id="u1"))
-        self.order_book.add_order(OrderModel(price=105, quantity=3, ticker="AAPL", side=OrderSide.SELL, user_id="u2"))
+        self.order_book.add_order(
+            OrderModel(
+                price=95, quantity=2, ticker="AAPL", side=OrderSide.BUY, user_id="u1"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=105, quantity=3, ticker="AAPL", side=OrderSide.SELL, user_id="u2"
+            )
+        )
 
         self.order_book.previous_mid["AAPL"] = 100
         self.order_book.last_traded_price["AAPL"] = 102
@@ -236,19 +323,37 @@ class TestOrderGenerator(TestCase):
         self.assertTrue(all(q > 0 for q in buys))
         self.assertTrue(all(q > 0 for q in sells))
 
-
-
     def test_process_ticker_multiple_instruments(self):
         """Test for multiple ticketrs that they are in the order book"""
+
         class DummyIMMultiple:
             def get_all_instruments(self):
-                return [type("Inst", (), {"id": "AAPL"})(), type("Inst", (), {"id": "TSLA"})()]
+                return [
+                    type("Inst", (), {"id": "AAPL"})(),
+                    type("Inst", (), {"id": "TSLA"})(),
+                ]
 
         self.generator.instrument_manager = DummyIMMultiple()
-        self.order_book.add_order(OrderModel(price=100, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"))
-        self.order_book.add_order(OrderModel(price=102, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"))
-        self.order_book.add_order(OrderModel(price=200, quantity=1, ticker="TSLA", side=OrderSide.BUY, user_id="u3"))
-        self.order_book.add_order(OrderModel(price=202, quantity=1, ticker="TSLA", side=OrderSide.SELL, user_id="u4"))
+        self.order_book.add_order(
+            OrderModel(
+                price=100, quantity=1, ticker="AAPL", side=OrderSide.BUY, user_id="u1"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=102, quantity=1, ticker="AAPL", side=OrderSide.SELL, user_id="u2"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=200, quantity=1, ticker="TSLA", side=OrderSide.BUY, user_id="u3"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=202, quantity=1, ticker="TSLA", side=OrderSide.SELL, user_id="u4"
+            )
+        )
         self.order_book.previous_mid["AAPL"] = 100
         self.order_book.previous_mid["TSLA"] = 200
         self.order_book.last_traded_price["AAPL"] = 101
@@ -259,27 +364,51 @@ class TestOrderGenerator(TestCase):
 
         self.assertEqual(set(self.order_book.buys.keys()), {"AAPL", "TSLA"})
 
-
     def test_process_ticker_zero_quantity_orders(self):
         """rders with zero quantity should be ignored and if process_ticker is called it should not place orders as spread is 0"""
         # Add zero-quantity orders
-        self.order_book.add_order(OrderModel(price=100, quantity=0, ticker="AAPL", side=OrderSide.BUY, user_id="u1"))
-        self.order_book.add_order(OrderModel(price=102, quantity=0, ticker="AAPL", side=OrderSide.SELL, user_id="u2"))
+        self.order_book.add_order(
+            OrderModel(
+                price=100, quantity=0, ticker="AAPL", side=OrderSide.BUY, user_id="u1"
+            )
+        )
+        self.order_book.add_order(
+            OrderModel(
+                price=102, quantity=0, ticker="AAPL", side=OrderSide.SELL, user_id="u2"
+            )
+        )
 
-    
         # Set previous_mid and last_traded_price
         self.order_book.previous_mid["AAPL"] = 101
         self.order_book.last_traded_price["AAPL"] = 101
 
         # Call _process_ticker
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
         # _process_ticker should skip zero-quantity orders and add new ones
         self.generator._process_ticker("AAPL")
 
-        print("Buys:", [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])])
-        print("Sells:", [(o.price, o.quantity) for _, _, o in self.order_book.sells.get("AAPL", [])])
+        print(
+            "Buys:",
+            [(o.price, o.quantity) for _, _, o in self.order_book.buys.get("AAPL", [])],
+        )
+        print(
+            "Sells:",
+            [
+                (o.price, o.quantity)
+                for _, _, o in self.order_book.sells.get("AAPL", [])
+            ],
+        )
 
         buys = self.order_book.buys.get("AAPL", [])
         sells = self.order_book.sells.get("AAPL", [])
@@ -287,15 +416,3 @@ class TestOrderGenerator(TestCase):
         # The zero-quantity orders should be ingored
         self.assertEqual(len(buys), 0)
         self.assertEqual(len(sells), 0)
-
-        
-
-
-    
-
-        
-
-
-
-
-
