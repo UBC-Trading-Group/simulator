@@ -1,19 +1,18 @@
-import { Routes, Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
+import './App.css';
 import Header from './components/Header';
+import RootProvider from './components/provider';
 import HomePage from './pages/index';
-import TradesPage from './pages/trades';
 import LoginPage from './pages/login';
 import ProfilePage from './pages/profile';
-import { AuthProvider } from './contexts/AuthContext';
-import { WebSocketProvider } from './contexts/WebSocketContext';
-import './App.css';
+import TradesPage from './pages/trades';
 
 function App() {
   return (
-    <AuthProvider>
-      <WebSocketProvider>
+    <RootProvider>
+
         <div>
-          <Header />
+        <Header />
           <main className="main container">
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -23,8 +22,7 @@ function App() {
             </Routes>
           </main>
         </div>
-      </WebSocketProvider>
-    </AuthProvider>
+        </RootProvider>
   );
 }
 

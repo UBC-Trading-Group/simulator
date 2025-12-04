@@ -3,6 +3,7 @@ import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import LatencyPill from './LatencyPill';
 import logoUrl from '/logo.png';
+import { ModeToggle } from './mode-toggle';
 
 function Header() {
   const navigate = useNavigate();
@@ -15,12 +16,13 @@ function Header() {
   };
 
   return (
-    <header className="app-header">
-      <div className="header-inner">
+    <header className="app-header dark:bg-dark">
+      <div className="header-inner dark:bg-dark">
         <div className="club">
           <Link to="/" className="club-link">
-            <img src={logoUrl} alt="" className="club-logo" />
-            <span className="club-text">Trading Simulator</span>
+            <img src={logoUrl} alt="" className="club-logo dark:hidden" />
+            <img src="/logo-white.png" alt="" className="club-logo hidden dark:block" />
+            <span className="club-text dark:text-text-1-dark!">Trading Simulator</span>
           </Link>
         </div>
         <div className="header-actions">
@@ -29,7 +31,8 @@ function Header() {
             isConnected={isConnected}
             isReconnecting={isReconnecting}
           />
-          <Link to="/trades" className="nav-link">Trades</Link>
+          <Link to="/trades" className="nav-link dark:text-text-1-dark! dark:hover:text-tg-brightred!">Trades</Link>
+          <ModeToggle />
           {isAuthenticated ? (
             <div className="auth-actions">
               <Link to="/profile" className="btn btn-secondary">Profile</Link>
