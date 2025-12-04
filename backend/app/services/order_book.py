@@ -62,6 +62,9 @@ class OrderBook:
         ticker = order.ticker
         quantity = order.quantity
 
+        if quantity <= 0:
+            return
+
         # ID will be automatically set if not provided
         book = self._get_book(ticker, side)
 
