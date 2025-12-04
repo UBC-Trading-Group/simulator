@@ -1,14 +1,7 @@
+import { useOrderbook } from "../../hooks/useOrderbook";
 
 export default function OrderBook() {
-
-  const orders = [
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-  ];
+  const { bids, asks } = useOrderbook("NOVA");
 
   return (
     <div>
@@ -66,7 +59,7 @@ export default function OrderBook() {
           <div className="grid grid-cols-2 overflow-y-auto flex-1">
             {/* BID Side */}
             <div className="bg-white dark:bg-dark-2">
-              {orders.map((order, index) => (
+              {bids.map((order, index) => (
                 <div 
                   key={`bid-${index}`}
                   className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125 transition-colors"
@@ -74,11 +67,11 @@ export default function OrderBook() {
                   <div className="grid grid-cols-3 gap-4 items-center">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.name}</span>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.ticker}</span>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.name}</div>
-                        <div className="text-gray-400 text-xs truncate">{order.company}</div>
+                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.ticker}</div>
+                        {/* <div className="text-gray-400 text-xs truncate">{order.company}</div> */}
                       </div>
                     </div>
                     <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
@@ -94,7 +87,7 @@ export default function OrderBook() {
 
             {/* ASK Side */}
             <div className="bg-white dark:bg-dark-2 border-l border-gray-200 dark:border-ui">
-              {orders.map((order, index) => (
+              {asks.map((order, index) => (
                 <div 
                   key={`ask-${index}`}
                   className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125  transition-colors"
@@ -102,11 +95,11 @@ export default function OrderBook() {
                   <div className="grid grid-cols-3 gap-4 items-center">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.name}</span>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.ticker}</span>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.name}</div>
-                        <div className="text-gray-400 text-xs truncate">{order.company}</div>
+                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.ticker}</div>
+                        {/* <div className="text-gray-400 text-xs truncate">{order.company}</div> */}
                       </div>
                     </div>
                     <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
