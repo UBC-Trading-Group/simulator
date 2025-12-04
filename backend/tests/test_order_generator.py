@@ -295,7 +295,7 @@ class TestOrderGenerator(TestCase):
         self.generator.gbm_manager = DummyGBMNone()
         self.generator._process_ticker("AAPL")
 
-        # Nothing should be added
+        # Nothing should be added :)
         self.assertNotIn("AAPL", self.order_book.buys)
         self.assertNotIn("AAPL", self.order_book.sells)
 
