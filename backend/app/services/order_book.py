@@ -56,6 +56,18 @@ class OrderBook:
                 self.sells[ticker] = []
             return self.sells[ticker]
 
+    def get_bids(self, ticker: str):
+        return [
+            entry[self.ORDER_OBJ_IDX]
+            for entry in sorted(self.buys.get(ticker, []), key=lambda x: -x[0])
+        ]
+
+    def get_asks(self, ticker: str):
+        return [
+            entry[self.ORDER_OBJ_IDX]
+            for entry in sorted(self.sells.get(ticker, []), key=lambda x: x[0])
+        ]
+
     def add_order(self, order: OrderModel) -> None:
         price = order.price
         side = order.side
