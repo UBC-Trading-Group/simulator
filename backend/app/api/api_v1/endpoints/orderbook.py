@@ -7,9 +7,7 @@ router = APIRouter()
 
 
 @router.get("/{ticker}")
-def get_orderbook(
-        ticker: str,
-        orderbook: OrderBook = Depends(get_order_book)):
+def get_orderbook(ticker: str, orderbook: OrderBook = Depends(get_order_book)):
 
     return {
         "ticker": ticker,
