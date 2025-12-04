@@ -7,7 +7,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlmodel import Session, select
+from sqlmodel import Session, SQLModel, select
 
 from app.core.deps import get_logger
 from app.core.logging import setup_logging
@@ -27,6 +27,7 @@ logger = get_logger(__name__)
 def populate_instruments():
     """Populate instruments table with initial data"""
     with Session(engine) as session:
+        SQLModel.metadata.create_all(engine)
         # Instruments data
         instruments_data = [
             {
@@ -103,6 +104,7 @@ def populate_instruments():
 def populate_sectors():
     """Populate sectors table with initial data"""
     with Session(engine) as session:
+        SQLModel.metadata.create_all(engine)
         # Sectors data
         sectors_data = [
             {
@@ -153,6 +155,7 @@ def populate_sectors():
 def populate_instrument_sector_exposure():
     """Populate instrument_sector_exposure table with initial data"""
     with Session(engine) as session:
+        SQLModel.metadata.create_all(engine)
         # Instrument sector exposure data
         exposure_data = [
             {
@@ -235,6 +238,7 @@ def populate_instrument_sector_exposure():
 def populate_macro_factors():
     """Populate macro_factors table with initial data"""
     with Session(engine) as session:
+        SQLModel.metadata.create_all(engine)
         # Macro factors data
         macro_factors_data = [
             {
@@ -371,6 +375,7 @@ def populate_macro_factors():
 def populate_instrument_factor_exposure():
     """Populate instrument_factor_exposure table with initial data"""
     with Session(engine) as session:
+        SQLModel.metadata.create_all(engine)
         # Instrument factor exposure data
         exposure_data = [
             # ARCO exposures
@@ -498,6 +503,7 @@ def populate_instrument_factor_exposure():
 def populate_news_events():
     """Populate news_events table with initial data"""
     with Session(engine) as session:
+        SQLModel.metadata.create_all(engine)
         # News events data
         news_events_data = [
             {
@@ -722,6 +728,7 @@ def populate_news_events():
 def populate_news_event_factors():
     """Populate news_event_factors table with initial data"""
     with Session(engine) as session:
+        SQLModel.metadata.create_all(engine)
         # News event factors data (id: factor_ids as comma-separated string)
         news_event_factors_data = {
             1: "RATE,MKT,FGI",
