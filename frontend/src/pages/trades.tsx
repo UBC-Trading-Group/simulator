@@ -204,7 +204,7 @@ function WidgetWindow(props: {
           ×
         </button>
       </div>
-      <div className="widget-body custom-scrollbar">
+      <div className="widget-body">
         {children}
       </div>
     </div>

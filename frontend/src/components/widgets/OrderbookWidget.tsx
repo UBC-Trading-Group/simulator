@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { useOrderbook } from "../../hooks/useOrderbook";
 
 export default function OrderBook() {
-  const { bids, asks } = useOrderbook("NOVA");
+  const [search, setSearch] = useState("");
+  const [filterValue, setFilterValue] = useState("");
+  const [isFilterActive, setIsFilterActive] = useState(false);
+  const { bids, asks } = useOrderbook(filterValue);
 
   return (
     <div>
@@ -15,14 +19,22 @@ export default function OrderBook() {
             <input 
               type="text" 
               placeholder="Search Order Book"
+              onChange={(e)=>setSearch(e.target.value.toUpperCase())}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-text-2 focus:border-transparent"
             />
           </div>
-          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
+          {isFilterActive &&
+          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors" onClick={() => {setIsFilterActive(false); 
+            setFilterValue("");}}>
             <span>×</span>
-            <span>TRAX</span>
-          </button>
-          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
+            <span>{filterValue.toUpperCase()}</span>
+          </button>}
+          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"  onClick={() => {
+    if (search.trim() !== "") {
+      setFilterValue(search.trim());
+      setIsFilterActive(true);
+    }
+  }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>

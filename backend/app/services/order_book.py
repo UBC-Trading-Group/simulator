@@ -10,7 +10,7 @@ class OrderBook:
     {
         "price": 101.5,
         "quantity": 5,
-        "ticker": "AAPL",x
+        "ticker": "AAPL",
         "user_id": "u1",
         "side": "buy"
     }

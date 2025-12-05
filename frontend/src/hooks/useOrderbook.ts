@@ -17,8 +17,10 @@ export interface OrderbookResponse {
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useOrderbook(ticker: string) {
+  const shouldFetch = ticker && ticker.trim() !== "";
+
   const { data, error, isLoading } = useSWR<OrderbookResponse>(
-    `http://localhost:8000/api/v1/orderbook/${ticker}`,
+    shouldFetch ? `http://localhost:8000/api/v1/orderbook/${ticker}` : null,
     fetcher,
     {
       refreshInterval: 700,
