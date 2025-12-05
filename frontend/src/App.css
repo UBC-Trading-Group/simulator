@@ -218,3 +218,30 @@
     min-height: 40vh;
   }
 }
+
+/* Custom Scrollbar Style */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-dark-2); /* your light bg */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-tg-brightred); /* red thumb */
+  border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a72f40; /* slightly darker on hover */
+}
+
+/* Dark Mode */
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #1e1e1e; /* dark background */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #C43B50; /* bright red */
+}
