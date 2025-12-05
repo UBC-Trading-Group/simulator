@@ -193,7 +193,7 @@ function WidgetWindow(props: {
   return (
     <div
       ref={el => { ref.current = el; }}
-      className="widget-win"
+      className="widget-win dark:bg-dark-2!"
       style={{ left: x, top: y, width, height, zIndex: z }}
       onMouseDown={onFocus}
       data-id={id}

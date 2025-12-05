@@ -1,14 +1,11 @@
+import { useState } from "react";
+import { useOrderbook } from "../../hooks/useOrderbook";
 
 export default function OrderBook() {
-
-  const orders = [
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-  ];
+  const [search, setSearch] = useState("");
+  const [filterValue, setFilterValue] = useState("");
+  const [isFilterActive, setIsFilterActive] = useState(false);
+  const { bids, asks, isError } = useOrderbook(filterValue);
 
   return (
     <div>
@@ -22,20 +19,32 @@ export default function OrderBook() {
             <input 
               type="text" 
               placeholder="Search Order Book"
+              onChange={(e)=>setSearch(e.target.value.toUpperCase())}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-text-2 focus:border-transparent"
             />
           </div>
-          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
+          {isFilterActive &&
+          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors" onClick={() => {setIsFilterActive(false); 
+            setFilterValue("");}}>
             <span>×</span>
-            <span>TRAX</span>
-          </button>
-          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
+            <span>{filterValue.toUpperCase()}</span>
+          </button>}
+          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"  onClick={() => {
+    if (search.trim() !== "") {
+      setFilterValue(search.trim());
+      setIsFilterActive(true);
+    }
+  }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
             <span>Filters</span>
           </button>
         </div>
+        
+            {isError && bids.length === 0 && asks.length === 0 && <div className="text-red-500 mb-4 pl-1">
+    Ticker "{filterValue}" not found.
+  </div>}
 
         {/* Order Book Table */}
         <div className="bg-white dark:bg-dark-2 rounded-lg shadow-sm dark:shadow-none border border-gray-200 dark:border-ui  flex flex-col flex-1">
@@ -63,10 +72,10 @@ export default function OrderBook() {
           </div>
 
           {/* Scrollable Order Rows */}
-          <div className="grid grid-cols-2 overflow-y-auto flex-1">
+          <div className="grid grid-cols-2 h-64 overflow-y-auto flex-1">
             {/* BID Side */}
-            <div className="bg-white dark:bg-dark-2">
-              {orders.map((order, index) => (
+            <div className="bg-white dark:bg-dark-2 h-72 overflow-y-scroll custom-scrollbar">
+              {bids.length === 0 ? <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No bids yet</div> : (bids.map((order, index) => (
                 <div 
                   key={`bid-${index}`}
                   className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125 transition-colors"
@@ -74,11 +83,11 @@ export default function OrderBook() {
                   <div className="grid grid-cols-3 gap-4 items-center">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.name}</span>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.ticker}</span>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.name}</div>
-                        <div className="text-gray-400 text-xs truncate">{order.company}</div>
+                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.ticker}</div>
+                        {/* <div className="text-gray-400 text-xs truncate">{order.company}</div> */}
                       </div>
                     </div>
                     <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
@@ -89,12 +98,12 @@ export default function OrderBook() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
 
             {/* ASK Side */}
-            <div className="bg-white dark:bg-dark-2 border-l border-gray-200 dark:border-ui">
-              {orders.map((order, index) => (
+            <div className="bg-white dark:bg-dark-2 border-l border-gray-200 dark:border-ui h-72 overflow-y-scroll custom-scrollbar">
+               {asks.length === 0 ? <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No asks yet</div> : (asks.map((order, index) => (
                 <div 
                   key={`ask-${index}`}
                   className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125  transition-colors"
@@ -102,11 +111,11 @@ export default function OrderBook() {
                   <div className="grid grid-cols-3 gap-4 items-center">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.name}</span>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.ticker}</span>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.name}</div>
-                        <div className="text-gray-400 text-xs truncate">{order.company}</div>
+                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.ticker}</div>
+                        {/* <div className="text-gray-400 text-xs truncate">{order.company}</div> */}
                       </div>
                     </div>
                     <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
@@ -117,7 +126,7 @@ export default function OrderBook() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
         </div>
