@@ -67,7 +67,7 @@ class OrderBook:
             entry[self.ORDER_OBJ_IDX]
             for entry in sorted(self.sells.get(ticker, []), key=lambda x: x[0])
         ]
-        
+
     def has_ticker(self, ticker: str) -> bool:
         return ticker in self.buys or ticker in self.sells
 

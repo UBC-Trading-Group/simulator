@@ -10,10 +10,7 @@ router = APIRouter()
 def get_orderbook(ticker: str, orderbook: OrderBook = Depends(get_order_book)):
 
     if not orderbook.has_ticker(ticker):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Ticker '{ticker}' does not exist"
-        )
+        raise HTTPException(status_code=404, detail=f"Ticker '{ticker}' does not exist")
 
     return {
         "ticker": ticker,
