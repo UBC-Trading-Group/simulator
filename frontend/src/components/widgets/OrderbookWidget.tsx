@@ -5,7 +5,7 @@ export default function OrderBook() {
   const [search, setSearch] = useState("");
   const [filterValue, setFilterValue] = useState("");
   const [isFilterActive, setIsFilterActive] = useState(false);
-  const { bids, asks } = useOrderbook(filterValue);
+  const { bids, asks, isError } = useOrderbook(filterValue);
 
   return (
     <div>
@@ -41,6 +41,10 @@ export default function OrderBook() {
             <span>Filters</span>
           </button>
         </div>
+        
+            {isError && bids.length === 0 && asks.length === 0 && <div className="text-red-500 mb-4 pl-1">
+    Ticker "{filterValue}" not found.
+  </div>}
 
         {/* Order Book Table */}
         <div className="bg-white dark:bg-dark-2 rounded-lg shadow-sm dark:shadow-none border border-gray-200 dark:border-ui  flex flex-col flex-1">
