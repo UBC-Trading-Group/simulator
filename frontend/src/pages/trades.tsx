@@ -1,216 +1,206 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import PriceChart from "../components/widgets/chart";
-import LeaderboardWidget from "../components/widgets/LeaderboardWidget";
-import PortfolioWidget from "../components/widgets/PortfolioWidget";
-import NewsFeedWidget from "../components/widgets/NewsFeedWidget";
-import StocksWidget from "../components/widgets/StocksWidget";
-import OrderbookWidget from "../components/widgets/OrderbookWidget";
-import BuySellWidget from "../components/widgets/BuySellWidget";
+import { useAuth } from "../contexts/AuthContext";
 
-type WidgetType =
-  | "Leaderboard"
-  | "Portfolio"
-  | "News Feed"
-  | "Stocks"
-  | "Orderbook"
-  | "Buy/Sell Widget"
-  | "Price Chart";
+const leaderboard = [
+  { name: "Team Cup", change: "+$435.00", positive: true },
+  { name: "Team Lebron", change: "+$132.00", positive: true },
+  { name: "Moinul Hasan Nayem", change: "-$826.00", positive: false },
+  { name: "Dr. Jubed Ahmed", change: "-$1,435.90", positive: false },
+  { name: "AR Jakir Alp", change: "-$2,228.00", positive: false },
+];
 
-interface WidgetModel {
-  id: string;
-  type: WidgetType;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  z: number;
+const recentOrders = [
+  { ticker: "NOVA", company: "NovaScala Systems Inc.", shares: 23, amount: "$420.84", date: "14 Apr 2022" },
+  { ticker: "GENX", company: "Genexa Biotechnologies", shares: 23, amount: "$100.00", date: "05 Apr 2022" },
+  { ticker: "AURA", company: "Aurora Financial Group", shares: 23, amount: "$244.20", date: "02 Apr 2022" },
+];
+
+interface Position {
+  symbol: string;
+  full_name: string;
+  sector: string;
+  quantity: number;
+  price: number;
+  total_position: number;
+  pnl: number;
+  pnl_percentage: number;
 }
 
-function useZIndex() {
-  const counter = useRef(10);
-  const next = () => {
-    counter.current += 1;
-    return counter.current;
-  };
-  return { next };
+interface PortfolioData {
+  positions: Position[];
 }
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 function TradesPage() {
-  const [widgets, setWidgets] = useState<WidgetModel[]>([]);
-  const { next } = useZIndex();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname === path;
+  const { token, isAuthenticated } = useAuth();
+  const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
 
-  const widgetTitles: Record<WidgetType, string> = useMemo(
-    () => ({
-      "Leaderboard": "Leaderboard",
-      "Portfolio": "Portfolio",
-      "News Feed": "News Feed",
-      "Stocks": "Stocks",
-      "Orderbook": "Orderbook",
-      "Buy/Sell Widget": "Buy / Sell",
-      "Price Chart": "Price Chart",
-    }),
-    []
-  );
+  // Fetch a lightweight portfolio snapshot for the dashboard card
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
 
-  const addWidget = useCallback((type: WidgetType) => {
-    setWidgets(prev => {
-      const offset = prev.length * 16;
-      const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const base: WidgetModel = {
-        id,
-        type,
-        x: 120 + (offset % 180),
-        y: 60 + (offset % 120),
-        width: 420,
-        height: 280,
-        z: next(),
-      };
-      return [...prev, base];
-    });
-  }, [next]);
+    const fetchPortfolio = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/portfolio/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setPortfolio(data);
+      } catch (err) {
+        console.error("Failed to load portfolio", err);
+      }
+    };
 
-  const closeWidget = useCallback((id: string) => {
-    setWidgets(prev => prev.filter(w => w.id !== id));
-  }, []);
+    fetchPortfolio();
+    const interval = setInterval(fetchPortfolio, 4000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, token]);
 
-  const updateWidget = useCallback((id: string, partial: Partial<WidgetModel>) => {
-    setWidgets(prev => prev.map(w => (w.id === id ? { ...w, ...partial } : w)));
-  }, []);
+  const portfolioRows = portfolio?.positions?.slice(0, 5) ?? [];
 
   return (
-    <div className="trades">
-      <aside className="overlay-aside">
-        <h3 className="overlay-title">Widgets</h3>
-        <ul className="widgets-list">
-          <li onClick={() => addWidget("Price Chart")}>Price Chart</li>
-          <li onClick={() => addWidget("Buy/Sell Widget")}>Buy/Sell Widget</li>
-          <li onClick={() => addWidget("Portfolio")}>Portfolio</li>
-          <li onClick={() => addWidget("Leaderboard")}>Leaderboard</li>
-          <li onClick={() => addWidget("News Feed")}>News Feed</li>
-          <li onClick={() => addWidget("Stocks")}>Stocks</li>
-          <li onClick={() => addWidget("Orderbook")}>Orderbook</li>
-        </ul>
+    <div className="dashboard-shell">
+      <aside className="dash-sidebar">
+        <div className="dash-logo">
+          <img src="/logo.png" alt="Trading Group" />
+        </div>
+        <nav className="dash-nav">
+          <button className={isActive("/trades") ? "active" : ""} onClick={() => navigate("/trades")}>Dashboard</button>
+          <button className={isActive("/portfolio") ? "active" : ""} onClick={() => navigate("/portfolio")}>Portfolio</button>
+          <button className={isActive("/transactions") ? "active" : ""} onClick={() => navigate("/transactions")}>Transactions</button>
+          <button className={isActive("/orderbook") ? "active" : ""} onClick={() => navigate("/orderbook")}>Order Book</button>
+          <button className={isActive("/news") ? "active" : ""} onClick={() => navigate("/news")}>News</button>
+          <button className={isActive("/settings") ? "active" : ""} onClick={() => navigate("/settings")}>Settings</button>
+        </nav>
+        <div className="dash-nav muted">
+          <button onClick={() => navigate("/help")}>Help</button>
+          <button onClick={() => navigate("/login?mode=login")}>Logout</button>
+        </div>
       </aside>
 
-      <div className="trades-stage">
-        {widgets.map(w => (
-          <WidgetWindow
-            key={w.id}
-            id={w.id}
-            title={widgetTitles[w.type]}
-            x={w.x}
-            y={w.y}
-            width={w.width}
-            height={w.height}
-            z={w.z}
-            onFocus={() => updateWidget(w.id, { z: next() })}
-            onMove={(x, y) => updateWidget(w.id, { x, y })}
-            onResize={(width, height) => updateWidget(w.id, { width, height })}
-            onClose={() => closeWidget(w.id)}
-          >
-            <WidgetBody type={w.type} />
-          </WidgetWindow>
-        ))}
+      <div className="dash-main">
+        <header className="dash-header">
+          <div>
+            <h1>Dashboard</h1>
+          </div>
+          <div className="dash-actions">
+            <button className="pill-btn">Add Widgets</button>
+          </div>
+        </header>
+
+        <section className="dash-metrics">
+          <div className="metric-card metric-dark">
+            <div className="metric-label">Realized P&L</div>
+            <div className="metric-value">$5240.21</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Volume Traded</div>
+            <div className="metric-value">$250.9k</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Current Position</div>
+            <div className="metric-value">2</div>
+          </div>
+        </section>
+
+        <div className="dash-grid">
+          <div className="dash-col">
+            <section className="dash-card chart-card">
+              <div className="card-head">
+                <h3>Stock Chart</h3>
+              </div>
+              <div style={{ height: 320 }}>
+                <PriceChart />
+              </div>
+            </section>
+
+            <section className="dash-card">
+              <div className="card-head">
+                <h3>Recent Orders</h3>
+                <button className="link-button">View All</button>
+              </div>
+              <div className="orders-table">
+                <div className="orders-header">
+                  <span>Instrument</span>
+                  <span>No. of Shares</span>
+                  <span className="text-right">Amount</span>
+                  <span className="text-right">Date</span>
+                </div>
+                {recentOrders.map((order) => (
+                  <div className="orders-row" key={`${order.ticker}-${order.date}`}>
+                    <div>
+                      <div className="order-ticker">{order.ticker}</div>
+                      <div className="order-company">{order.company}</div>
+                    </div>
+                    <div>{order.shares}</div>
+                    <div className="text-right">{order.amount}</div>
+                    <div className="text-right">{order.date}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <div className="dash-col slim">
+            <section className="dash-card">
+              <div className="card-head">
+                <h3>Leaderboard</h3>
+                <button className="link-button">View All</button>
+              </div>
+              <ol className="leaderboard-list">
+                {leaderboard.map((entry, idx) => (
+                  <li key={entry.name}>
+                    <span className="rank">{idx + 1}.</span>
+                    <span className="leader-name">{entry.name}</span>
+                    <span className={entry.positive ? "pos" : "neg"}>{entry.change}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            <section className="dash-card">
+              <div className="card-head">
+                <h3>Portfolio</h3>
+                <button className="link-button">View All</button>
+              </div>
+              {isAuthenticated ? (
+                <div className="portfolio-list">
+                  {portfolioRows.length === 0 ? (
+                    <div className="orders-row" style={{ borderBottom: "none" }}>No positions yet.</div>
+                  ) : (
+                    portfolioRows.map((item) => {
+                      const changePositive = item.pnl >= 0;
+                      return (
+                        <div className="portfolio-row" key={item.symbol}>
+                          <div className="portfolio-ticker">{item.symbol}</div>
+                          <div className={`portfolio-change ${changePositive ? "pos" : "neg"}`}>
+                            {`${changePositive ? "+" : "-"}$${Math.abs(item.pnl).toFixed(2)}`}
+                          </div>
+                          <div className="portfolio-balance">${item.total_position.toFixed(2)}</div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
+              )}
+            </section>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function WidgetBody({ type }: { type: WidgetType }) {
-  if (type === "Price Chart") {
-    return <PriceChart />;
-  }
-  if (type === "Leaderboard") return <LeaderboardWidget />;
-  if (type === "Portfolio") return <PortfolioWidget />;
-  if (type === "News Feed") return <NewsFeedWidget />;
-  if (type === "Stocks") return <StocksWidget />;
-  if (type === "Orderbook") return <OrderbookWidget />;
-  if (type === "Buy/Sell Widget") return <BuySellWidget />;
-  return null;
-}
-
-function WidgetWindow(props: {
-  id: string;
-  title: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  z: number;
-  onMove: (x: number, y: number) => void;
-  onResize: (w: number, h: number) => void;
-  onClose: () => void;
-  onFocus: () => void;
-  children: React.ReactNode;
-}) {
-  const { id, title, x, y, width, height, z, onMove, onResize, onClose, onFocus, children } = props;
-  const ref = useRef<HTMLDivElement | null>(null);
-  const dragging = useRef(false);
-  const dragOffset = useRef({ dx: 0, dy: 0 });
-
-  const onHeaderMouseDown = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-    dragging.current = true;
-    dragOffset.current = { dx: e.clientX - x, dy: e.clientY - y };
-    onFocus();
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  };
-
-  const onMouseMove = (e: MouseEvent) => {
-    if (!dragging.current) return;
-    const nx = e.clientX - dragOffset.current.dx;
-    const ny = e.clientY - dragOffset.current.dy;
-    const clampedX = Math.max(0, nx);
-    const clampedY = Math.max(0, ny);
-    onMove(clampedX, clampedY);
-  };
-
-  const onMouseUp = () => {
-    dragging.current = false;
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("mouseup", onMouseUp);
-  };
-
-  // Track resizes with ResizeObserver so sizes persist
-  useEffect(() => {
-  const node = ref.current;
-  if (!node) return;
-
-  const ro = new ResizeObserver(entries => {
-    const { width: w, height: h } = entries[0].contentRect;
-
-    // prevent jitter / resize loop
-    if (Math.abs(w - width) > 2 || Math.abs(h - height) > 2) {
-      onResize(Math.round(w), Math.round(h));
-    }
-  });
-
-  ro.observe(node);
-  return () => ro.disconnect();
-}, [width, height, onResize]);
-
-  return (
-    <div
-      ref={el => { ref.current = el; }}
-      className="widget-win"
-      style={{ left: x, top: y, width, height, zIndex: z }}
-      onMouseDown={onFocus}
-      data-id={id}
-    >
-      <div className="flex items-center justify-between cursor-move select-none font-bold p-5 bg-white dark:bg-dark-2" onMouseDown={onHeaderMouseDown}>
-        <span className="font-semibold text-text-1 dark:text-text-1-dark text-2xl">{title}</span>
-        <button className="widget-close" onClick={onClose} aria-label="Close">
-          ×
-        </button>
-      </div>
-      <div className="widget-body">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-export default TradesPage
-
-
+export default TradesPage;
