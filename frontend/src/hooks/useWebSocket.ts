@@ -86,7 +86,7 @@ export function useWebSocket({
       wsRef.current = ws
 
       ws.onopen = () => {
-        console.log('WebSocket connected')
+        console.log('WebSocket connected', url)
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -122,12 +122,12 @@ export function useWebSocket({
       }
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
+        console.error('WebSocket error:', error, 'url:', url)
         onError?.(error)
       }
 
       ws.onclose = () => {
-        console.log('WebSocket closed')
+        console.log('WebSocket closed', url)
         setState(prev => ({ ...prev, isConnected: false }))
         clearTimers()
 

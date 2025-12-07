@@ -32,6 +32,16 @@ interface PortfolioData {
   positions: Position[];
 }
 
+interface Order {
+  order_id: string;
+  symbol: string;
+  quantity: number;
+  type: string;
+  status: string;
+  price?: number;
+  created_at?: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 function TradesPage() {
@@ -40,6 +50,16 @@ function TradesPage() {
   const isActive = (path: string) => location.pathname === path;
   const { token, isAuthenticated } = useAuth();
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [realizedPnL, setRealizedPnL] = useState<number | null>(null);
+  const [volumeTraded, setVolumeTraded] = useState<number | null>(null);
+  const [currentPositions, setCurrentPositions] = useState<number | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+
+  const formatCurrency = (value: number | null) => {
+    if (value === null || Number.isNaN(value)) return "--";
+    return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  };
 
   // Fetch a lightweight portfolio snapshot for the dashboard card
   useEffect(() => {
@@ -56,6 +76,19 @@ function TradesPage() {
         if (!response.ok) return;
         const data = await response.json();
         setPortfolio(data);
+        if (Array.isArray(data.positions)) {
+          const totalPnl = data.positions.reduce(
+            (acc: number, pos: Position) => acc + (pos.pnl ?? 0),
+            0
+          );
+          const totalVolume = data.positions.reduce(
+            (acc: number, pos: Position) => acc + Math.abs(pos.total_position ?? 0),
+            0
+          );
+          setRealizedPnL(totalPnl);
+          setVolumeTraded(totalVolume);
+          setCurrentPositions(data.positions.length);
+        }
       } catch (err) {
         console.error("Failed to load portfolio", err);
       }
@@ -63,6 +96,41 @@ function TradesPage() {
 
     fetchPortfolio();
     const interval = setInterval(fetchPortfolio, 4000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, token]);
+
+  // Fetch recent orders for dashboard table
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setOrders([]);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        setOrdersError(null);
+        const response = await fetch(`${API_BASE_URL}/trading/orders`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) {
+          setOrdersError("Could not load orders");
+          return;
+        }
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setOrders(data);
+        }
+      } catch (err) {
+        console.error("Failed to load orders", err);
+        setOrdersError("Could not load orders");
+      }
+    };
+
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, [isAuthenticated, token]);
 
@@ -101,15 +169,17 @@ function TradesPage() {
         <section className="dash-metrics">
           <div className="metric-card metric-dark">
             <div className="metric-label">Realized P&L</div>
-            <div className="metric-value">$5240.21</div>
+            <div className="metric-value">{formatCurrency(realizedPnL)}</div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Volume Traded</div>
-            <div className="metric-value">$250.9k</div>
+            <div className="metric-value">{formatCurrency(volumeTraded)}</div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Current Position</div>
-            <div className="metric-value">2</div>
+            <div className="metric-value">
+              {currentPositions !== null ? currentPositions : "--"}
+            </div>
           </div>
         </section>
 
@@ -129,25 +199,42 @@ function TradesPage() {
                 <h3>Recent Orders</h3>
                 <button className="link-button">View All</button>
               </div>
-              <div className="orders-table">
-                <div className="orders-header">
-                  <span>Instrument</span>
-                  <span>No. of Shares</span>
-                  <span className="text-right">Amount</span>
-                  <span className="text-right">Date</span>
-                </div>
-                {recentOrders.map((order) => (
-                  <div className="orders-row" key={`${order.ticker}-${order.date}`}>
-                    <div>
-                      <div className="order-ticker">{order.ticker}</div>
-                      <div className="order-company">{order.company}</div>
-                    </div>
-                    <div>{order.shares}</div>
-                    <div className="text-right">{order.amount}</div>
-                    <div className="text-right">{order.date}</div>
+              {isAuthenticated ? (
+                <div className="orders-table">
+                  <div className="orders-header">
+                    <span>Instrument</span>
+                    <span>No. of Shares</span>
+                    <span className="text-right">Amount</span>
+                    <span className="text-right">Date</span>
                   </div>
-                ))}
-              </div>
+                  {ordersError && (
+                    <div className="orders-row" style={{ borderBottom: "none", color: "#b91c1c" }}>
+                      {ordersError}
+                    </div>
+                  )}
+                  {!ordersError && orders.length === 0 && (
+                    <div className="orders-row" style={{ borderBottom: "none" }}>No orders yet.</div>
+                  )}
+                  {!ordersError && orders.length > 0 && orders.map((order) => {
+                    const amount = order.price ? order.price * order.quantity : undefined;
+                    const formattedAmount = amount ? `$${amount.toFixed(2)}` : "—";
+                    const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString() : "—";
+                    return (
+                      <div className="orders-row" key={order.order_id}>
+                        <div>
+                          <div className="order-ticker">{order.symbol}</div>
+                          <div className="order-company" style={{ textTransform: "capitalize" }}>{order.type} • {order.status}</div>
+                        </div>
+                        <div>{order.quantity}</div>
+                        <div className="text-right">{formattedAmount}</div>
+                        <div className="text-right">{dateStr}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view recent orders.</div>
+              )}
             </section>
           </div>
 
