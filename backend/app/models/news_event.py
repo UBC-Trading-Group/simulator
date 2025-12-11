@@ -16,3 +16,4 @@ class NewsEvent(SQLModel, table=True):
     magnitude_top: float = Field(nullable=False, default=0.0)
     magnitude_bottom: float = Field(nullable=False, default=0.0)
     decay_halflife_s: float = Field(nullable=False)
+    ts_release_ms: int = Field(nullable=False)
