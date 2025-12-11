@@ -43,7 +43,6 @@ class NewsShockSimulator:
             return None
 
         randomized_event = random.choice(candidates)
-        self.active_news_ids.add(randomized_event.id)
         return randomized_event
 
     """
@@ -96,12 +95,12 @@ class NewsShockSimulator:
         self.news_objects.append(news_object)
 
         # News added ad-hoc are immediately active
-        self.active_news_ids.add(news_object["id"])
+        self.active_news_ids.add(news_object.id)
 
     async def activate_news_after_delay(self, news: NewsEvent):
         delay = random.randint(0, self.NEWS_TICK_DELAY)
         await asyncio.sleep(delay)
-        self.active_news_ids.add(news["id"])
+        self.active_news_ids.add(news.id)
 
     async def add_news_on_tick(self):
         self.is_running = True
