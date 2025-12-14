@@ -8,7 +8,6 @@ from app.services.liquidity_bot_manager import LiquidityBotManager
 from app.services.news import NewsShockSimulator
 from app.services.order_book import OrderBook
 from app.services.order_generator import OrderGenerator
-from app.services.order_processor import OrderProcessor
 from app.websocket.price_engine import PriceEngine
 
 """
@@ -36,10 +35,6 @@ order_generator = OrderGenerator(
 lb_manager = LiquidityBotManager(
     instruments=instrument_manager.get_all_instruments(),
     order_book=order_book,
-)
-order_processor = OrderProcessor(
-    order_book=order_book,
-    price_engine=price_engine,
 )
 
 
@@ -73,7 +68,3 @@ def get_order_generator() -> OrderGenerator:
 
 def get_liquidity_bot_manager() -> LiquidityBotManager:
     return lb_manager
-
-
-def get_order_processor() -> OrderProcessor:
-    return order_processor
