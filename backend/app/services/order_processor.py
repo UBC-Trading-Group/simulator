@@ -61,3 +61,12 @@ class OrderProcessor:
             "order_id": order.id,
             "unfilled_amount": order.quantity - fulfilled_amount,
         }
+
+    def get_portfolio(self, user_id: str):
+        return self.order_book.get_portfolio(user_id)
+
+    def get_unfulfilled_orders(self, user_id: str):
+        return self.order_book.get_unfulfilled_orders(user_id)
+
+    def get_fulfilled_orders(self, user_id: str):
+        return self.order_book.get_fulfilled_orders(user_id)
