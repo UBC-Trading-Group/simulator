@@ -50,3 +50,14 @@ class OrderProcessor:
                 "status": "NOT_FOUND",
                 "message": "Order not found in the order book",
             }
+
+    def check_order_status(self, order):
+        order: OrderModel = self._ensure_model(order)
+        status = self.order_book.check_order_status(order)
+        fulfilled_amount = self.order_book.check_order_fulfilled_amount(order)
+        return {
+            "status": status,
+            "fulfilled_amount": fulfilled_amount,
+            "order_id": order.id,
+            "unfilled_amount": order.quantity - fulfilled_amount,
+        }
