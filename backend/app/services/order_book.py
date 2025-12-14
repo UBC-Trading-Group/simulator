@@ -56,6 +56,24 @@ class OrderBook:
                 self.sells[ticker] = []
             return self.sells[ticker]
 
+    def check_order_status(self, order: OrderModel) -> OrderStatus:
+        # Check if order exists in the book
+        book = self._get_book(order.ticker, order.side)
+        for _, _, existing_order in book:
+            if existing_order.id == order.id:
+                return OrderStatus.OPEN
+        return OrderStatus.FILLED
+
+    def check_order_fulfilled_amount(self, order: OrderModel) -> int:
+        # Check how much of the order has been fulfilled
+        book = self._get_book(order.ticker, order.side)
+        fulfilled_amount = 0
+        for _, quantity, existing_order in book:
+            if existing_order.id == order.id:
+                # looking at the remaining quantity in the book, so fulfilled = original - remaining
+                fulfilled_amount += order.quantity - quantity
+        return fulfilled_amount
+
     def add_order(self, order: OrderModel) -> None:
         price = order.price
         side = order.side
