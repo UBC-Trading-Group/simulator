@@ -1,5 +1,5 @@
 import heapq
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from app.schemas.order import OrderModel, OrderSide, OrderStatus
 
@@ -36,6 +36,8 @@ class OrderBook:
         """
         self.buys: Dict[str, List[Tuple[float, int, OrderModel]]] = {}
         self.sells: Dict[str, List[Tuple[float, int, OrderModel]]] = {}
+        self.order_mapping: Dict[str, OrderModel] = {}
+        self.fulfilled_orders: Set[str] = set()
         self.last_traded_price: Dict[str, float] = {}
         self.CLAMPED_DELTA_COEFF: float = 2.5
         self.PRICE_IDX = 0
@@ -57,21 +59,24 @@ class OrderBook:
             return self.sells[ticker]
 
     def check_order_status(self, order: OrderModel) -> OrderStatus:
-        # Check if order exists in the book
-        book = self._get_book(order.ticker, order.side)
-        for _, _, existing_order in book:
-            if existing_order.id == order.id:
-                return OrderStatus.OPEN
-        return OrderStatus.FILLED
+        # Check if the order was fulfiled
+        if order.id in self.fulfilled_orders:
+            return OrderStatus.FILLED
+
+        # Check if the order even exists in the book
+        if order.id not in self.order_mapping:
+            raise ValueError("Order not found")
+
+        return OrderStatus.OPEN
 
     def check_order_fulfilled_amount(self, order: OrderModel) -> int:
         # Check how much of the order has been fulfilled
-        book = self._get_book(order.ticker, order.side)
-        fulfilled_amount = 0
-        for _, quantity, existing_order in book:
-            if existing_order.id == order.id:
-                # looking at the remaining quantity in the book, so fulfilled = original - remaining
-                fulfilled_amount += order.quantity - quantity
+        if order.id not in self.order_mapping:
+            raise ValueError("Order not found")
+
+        # fulfilled amount = initial amount - remaining amount
+        fulfilled_amount = order.quantity - self.order_mapping[order.id].quantity
+
         return fulfilled_amount
 
     def add_order(self, order: OrderModel) -> None:
@@ -87,8 +92,10 @@ class OrderBook:
         book = self._get_book(ticker, side)
 
         if side == OrderSide.BUY:
+            self.order_mapping[order.id] = order
             heapq.heappush(book, (-price, quantity, order))
         elif side == OrderSide.SELL:
+            self.order_mapping[order.id] = order
             heapq.heappush(book, (price, quantity, order))
         else:
             raise ValueError("Invalid side")
@@ -263,8 +270,10 @@ class OrderBook:
 
             heapq.heappop(opposite_heap)
             if opp_order.quantity > 0:
-                # Set modify flag to prevent generating a new uuid
                 self.add_order(opp_order)
+            else:
+                # in this case, the order is fully matched
+                self.fulfilled_orders.add(opp_order.id)
 
         # Handle the remaining quantities (if any)
         if quantity == initial_quantity:
@@ -278,4 +287,5 @@ class OrderBook:
             return OrderStatus.PARTIALLY_FILLED, quantity
         else:
             # Fully matched
+            self.fulfilled_orders.add(order.id)
             return OrderStatus.FILLED, 0
