@@ -36,11 +36,16 @@ class OrderModel(BaseModel):
 
 class OrderCreate(BaseModel):
     """Request schema for creating an order"""
+
     symbol: str = Field(..., description="Ticker symbol")
     quantity: int = Field(..., gt=0, description="Order quantity")
     side: OrderSide = Field(..., description="Order side: buy or sell")
     order_type: OrderType = Field(..., description="Order type: market or limit")
-    price: Optional[float] = Field(None, ge=0, description="Limit price (required for limit orders, ignored for market orders)")
+    price: Optional[float] = Field(
+        None,
+        ge=0,
+        description="Limit price (required for limit orders, ignored for market orders)",
+    )
 
     class Config:
         validate_assignment = True

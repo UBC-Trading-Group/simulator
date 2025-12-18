@@ -11,13 +11,13 @@ from app.core.deps import get_current_active_user
 from app.db.database import get_db
 from app.schemas.order import OrderCreate, OrderModel, OrderSide, OrderType
 from app.schemas.user import UserInDB
+from app.services.order_processor import OrderProcessor
 from dependencies import (
     get_instrument_manager,
     get_order_book,
     order_book,
     price_engine,
 )
-from app.services.order_processor import OrderProcessor
 
 router = APIRouter()
 
