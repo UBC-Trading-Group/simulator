@@ -8,6 +8,7 @@ class InstrumentManager:
     def __init__(self):
         self.instruments: list[Instrument] = []
         self.valid_instrument_ids: set[str] = set()
+        self.initialize_instruments()
 
     def initialize_instruments(self):
         with Session(engine) as session:

@@ -29,7 +29,7 @@ class OrderGenerator:
         spread = self.order_book.clamped_spread(ticker)
         return spread
 
-    def _derive_spread(self, ticker: str, mid_price: float) -> float:
+    def _derive_spread(self, ticker: str) -> float:
         spread = self._current_spread(ticker)
         if spread is not None and spread > 0:
             return spread
@@ -40,7 +40,7 @@ class OrderGenerator:
         if mid_gbm is None:
             return
 
-        spread = self._derive_spread(ticker, mid_gbm)
+        spread = self._derive_spread(ticker)
         if spread is None:
             return
 
