@@ -50,3 +50,23 @@ class OrderProcessor:
                 "status": "NOT_FOUND",
                 "message": "Order not found in the order book",
             }
+
+    def check_order_status(self, order):
+        order: OrderModel = self._ensure_model(order)
+        status = self.order_book.check_order_status(order)
+        fulfilled_amount = self.order_book.check_order_fulfilled_amount(order)
+        return {
+            "status": status,
+            "fulfilled_amount": fulfilled_amount,
+            "order_id": order.id,
+            "unfilled_amount": order.quantity - fulfilled_amount,
+        }
+
+    def get_portfolio(self, user_id: str):
+        return self.order_book.get_portfolio(user_id)
+
+    def get_unfulfilled_orders(self, user_id: str):
+        return self.order_book.get_unfulfilled_orders(user_id)
+
+    def get_fulfilled_orders(self, user_id: str):
+        return self.order_book.get_fulfilled_orders(user_id)

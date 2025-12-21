@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 class NewsShockSimulator:
     def __init__(self):
         self.news_objects: List[NewsEvent] = []
-        self.NEWS_TICK_DELAY = 60
+        self.NEWS_TICK_DELAY = 60  # choose news at start of minute
         self.active_news_ids: Set[int] = set()
 
         # Initialize all news
@@ -43,7 +43,6 @@ class NewsShockSimulator:
             return None
 
         randomized_event = random.choice(candidates)
-        self.active_news_ids.add(randomized_event.id)
         return randomized_event
 
     """
@@ -96,7 +95,12 @@ class NewsShockSimulator:
         self.news_objects.append(news_object)
 
         # News added ad-hoc are immediately active
-        self.active_news_ids.add(news_object["id"])
+        self.active_news_ids.add(news_object.id)
+
+    async def activate_news_after_delay(self, news: NewsEvent):
+        delay = random.randint(0, self.NEWS_TICK_DELAY)
+        await asyncio.sleep(delay)
+        self.active_news_ids.add(news.id)
 
     async def add_news_on_tick(self):
         self.is_running = True
@@ -105,6 +109,8 @@ class NewsShockSimulator:
                 news = self.get_random_news()
                 if news:
                     self.news_objects.append(news)
+                    # Schedule background job -> news should be activated randomly within the minute
+                    asyncio.create_task(self.activate_news_after_delay(news))
                 await asyncio.sleep(self.NEWS_TICK_DELAY)
             except asyncio.CancelledError:
                 self.is_running = False
