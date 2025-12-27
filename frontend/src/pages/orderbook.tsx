@@ -28,7 +28,7 @@ function OrderBookPage() {
       <div className="dash-main">
         <h1 className="page-title">Order Book</h1>
         <div className="page-card">
-          <p>Order Book view coming soon.</p>
+          <p style={{ margin: 0, color: "#6b7280" }}>Order Book coming soon.</p>
         </div>
       </div>
     </div>
