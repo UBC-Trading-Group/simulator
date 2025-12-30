@@ -667,7 +667,7 @@
 .tx-table { display: grid; gap: 10px; }
 .tx-row {
   display: grid;
-  grid-template-columns: 1fr 1.4fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1.4fr 1fr 1fr 1fr;
   align-items: center;
   column-gap: 10px;
   padding: 12px 10px;
@@ -722,6 +722,95 @@
   font-size: 12px;
   font-weight: 700;
 }
+
+/* Order book */
+.orderbook-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.orderbook-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.orderbook-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.orderbook-search select {
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 8px 6px;
+  min-width: 220px;
+  font-weight: 700;
+}
+.orderbook-search button {
+  background: #892736;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.orderbook-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.orderbook-side {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+.orderbook-side-head {
+  padding: 12px 16px;
+  background: linear-gradient(90deg, #892736, #b23c50);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.orderbook-side-head.ask { background: linear-gradient(90deg, #5f0f1f, #892736); }
+.orderbook-table-head,
+.orderbook-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  align-items: center;
+  column-gap: 10px;
+  padding: 12px 14px;
+}
+.orderbook-table-head {
+  font-weight: 700;
+  color: #6b7280;
+  background: #f8fafc;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.orderbook-row { border-bottom: 1px solid #e5e7eb; }
+.orderbook-row:last-child { border-bottom: none; }
+.orderbook-row.muted { color: #6b7280; }
+.orderbook-name { display: flex; align-items: center; gap: 10px; }
+.orderbook-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #111827;
+  font-size: 12px;
+}
+.orderbook-ticker { font-weight: 800; color: #111827; }
+.orderbook-sub { font-size: 12px; color: #6b7280; }
+.bid { color: #16a34a; font-weight: 700; }
+.ask { color: #b91c1c; font-weight: 700; }
 
 @media (max-width: 900px) {
   .trades {

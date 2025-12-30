@@ -15,6 +15,15 @@ from app.schemas.user import UserInDB
 router = APIRouter()
 
 
+@router.get("/instruments")
+def list_instruments(db: Session = Depends(get_db)) -> List[dict]:
+    """
+    Return all tradable instruments with id and full name.
+    """
+    instruments = db.exec(select(Instrument)).all()
+    return [{"id": inst.id, "full_name": inst.full_name} for inst in instruments]
+
+
 @router.get("/")
 def get_portfolio(
     current_user: UserInDB = Depends(get_current_active_user),

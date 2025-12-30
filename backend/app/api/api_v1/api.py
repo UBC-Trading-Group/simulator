@@ -8,6 +8,7 @@ from app.api.api_v1.endpoints import (
     admin,
     auth,
     leaderboard,
+    news,
     orderbook,
     portfolio,
     trading,
@@ -22,6 +23,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(trading.router, prefix="/trading", tags=["trading"])
 api_router.include_router(orderbook.router, prefix="/orderbook", tags=["orderbook"])
+api_router.include_router(news.router, prefix="/news", tags=["news"])
 api_router.include_router(
     leaderboard.router, prefix="/leaderboard", tags=["leaderboard"]
 )

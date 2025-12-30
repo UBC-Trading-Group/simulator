@@ -22,7 +22,7 @@ const fetcher = (url: string) =>
 
 export function useNews() {
   const { data, error, isLoading } = useSWR<{ news: NewsItem[] }>(
-    `${API_BASE_URL}/admin/news/all`,
+    `${API_BASE_URL}/news/all`,
     fetcher,
     {
       refreshInterval: 5000,

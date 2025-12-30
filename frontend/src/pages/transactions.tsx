@@ -9,7 +9,6 @@ interface OrderHistory {
   symbol: string;
   quantity: number;
   price?: number;
-  status: string;
   type: string;
   created_at?: string;
 }
@@ -71,8 +70,6 @@ function TransactionsPage() {
   const formatDate = (dt?: string) =>
     dt ? new Date(dt).toLocaleString() : "--";
 
-  const formatStatus = (status: string) => status?.toLowerCase?.() ?? "";
-
   return (
     <div className="dashboard-shell">
       <aside className="dash-sidebar">
@@ -107,7 +104,6 @@ function TransactionsPage() {
                 <span>Time</span>
                 <span className="text-center">Quantity</span>
                 <span className="text-right">Price</span>
-                <span className="text-center">Status</span>
                 <span className="text-center">Order Type</span>
               </div>
               {error && <div className="tx-row tx-error">{error}</div>}
@@ -116,25 +112,19 @@ function TransactionsPage() {
                 <div className="tx-row">No orders yet.</div>
               )}
               {!error &&
-                orders.map((order) => {
-                  const statusClass = `status-badge ${formatStatus(order.status)}`;
-                  return (
-                    <div className="tx-row" key={order.order_id}>
-                      <span className="tx-strong">{order.symbol}</span>
-                      <span>{formatDate(order.created_at)}</span>
-                      <span className="text-center">{order.quantity}</span>
-                      <span className="text-right">
-                        {order.price != null ? `$${order.price.toFixed(2)}` : "--"}
-                      </span>
-                      <span className="text-center">
-                        <span className={statusClass}>{order.status}</span>
-                      </span>
-                      <span className="text-center tx-type">
-                        {order.type?.toUpperCase?.() ?? "--"}
-                      </span>
-                    </div>
-                  );
-                })}
+                orders.map((order) => (
+                  <div className="tx-row" key={order.order_id}>
+                    <span className="tx-strong">{order.symbol}</span>
+                    <span>{formatDate(order.created_at)}</span>
+                    <span className="text-center">{order.quantity}</span>
+                    <span className="text-right">
+                      {order.price != null ? `$${order.price.toFixed(2)}` : "--"}
+                    </span>
+                    <span className="text-center tx-type">
+                      {order.type?.toUpperCase?.() ?? "--"}
+                    </span>
+                  </div>
+                ))}
             </div>
           )}
         </div>
