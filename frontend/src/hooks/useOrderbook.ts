@@ -14,13 +14,23 @@ export interface OrderbookResponse {
   asks: Order[];
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) {
+      throw new Error(`Orderbook fetch failed: ${r.status}`);
+    }
+    return r.json();
+  });
 
 export function useOrderbook(ticker: string) {
-  const shouldFetch = ticker && ticker.trim() !== "";
+  const normalizedTicker = (ticker || "").trim().toUpperCase();
+  const shouldFetch = normalizedTicker !== "";
 
   const { data, error, isLoading } = useSWR<OrderbookResponse>(
-    shouldFetch ? `http://localhost:8000/api/v1/orderbook/${ticker}` : null,
+    shouldFetch ? `${API_BASE_URL}/orderbook/${encodeURIComponent(normalizedTicker)}` : null,
     fetcher,
     {
       refreshInterval: 700,
@@ -31,7 +41,7 @@ export function useOrderbook(ticker: string) {
   return {
     bids: data?.bids ?? [],
     asks: data?.asks ?? [],
-    ticker: data?.ticker,
+    ticker: data?.ticker ?? normalizedTicker,
     isLoading,
     isError: error,
   };

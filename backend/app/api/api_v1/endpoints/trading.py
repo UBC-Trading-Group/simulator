@@ -120,29 +120,12 @@ def create_order(
 def get_orders(
     current_user: UserInDB = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    order_book=Depends(get_order_book),
 ) -> List[dict]:
     """
     Get user's orders (requires authentication)
     """
-    # This is just an example - in a real app you'd query the database
-    return [
-        {
-            "order_id": f"order_{current_user.id}_AAPL_10",
-            "symbol": "AAPL",
-            "quantity": 10,
-            "type": "buy",
-            "status": "filled",
-            "price": 150.0,
-        },
-        {
-            "order_id": f"order_{current_user.id}_GOOGL_5",
-            "symbol": "GOOGL",
-            "quantity": 5,
-            "type": "buy",
-            "status": "pending",
-            "price": 2500.0,
-        },
-    ]
+    return order_book.get_trader_orders_with_status(str(current_user.id))
 
 
 @router.get("/orderbook/{symbol}")

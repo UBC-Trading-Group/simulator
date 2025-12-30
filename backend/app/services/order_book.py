@@ -142,6 +142,27 @@ class OrderBook:
                     portfolio[current_order.ticker] -= current_order.quantity
         return portfolio
 
+    def get_trader_orders_with_status(self, user_id: str) -> List[dict]:
+        """Return all orders for a trader with a simple open/filled status."""
+        orders: List[dict] = []
+        for order_id in self._get_trader_orders(user_id):
+            if order_id not in self.order_mapping:
+                continue
+            order = self.order_mapping[order_id]
+            status = "filled" if order_id in self.fulfilled_orders else "open"
+            orders.append(
+                {
+                    "order_id": str(order.id),
+                    "symbol": order.ticker,
+                    "quantity": order.quantity,
+                    "price": order.price,
+                    "type": order.side.value,
+                    "status": status,
+                }
+            )
+        # Keep newest-like ordering by ID insertion (UUID has no time ordering). Return as-is.
+        return orders
+
     def check_order_status(self, order: OrderModel) -> OrderStatus:
         # Check if the order was fulfiled
         if order.id in self.fulfilled_orders:
