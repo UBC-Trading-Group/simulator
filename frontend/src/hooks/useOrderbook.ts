@@ -1,4 +1,5 @@
 import useSWR from "swr";
+import { getApiBaseUrl } from "../config/api";
 
 export interface Order {
   ticker: string;
@@ -20,7 +21,7 @@ export function useOrderbook(ticker: string) {
   const shouldFetch = ticker && ticker.trim() !== "";
 
   const { data, error, isLoading } = useSWR<OrderbookResponse>(
-    shouldFetch ? `http://localhost:8000/api/v1/orderbook/${ticker}` : null,
+    shouldFetch ? `${getApiBaseUrl()}/orderbook/${ticker}` : null,
     fetcher,
     {
       refreshInterval: 700,

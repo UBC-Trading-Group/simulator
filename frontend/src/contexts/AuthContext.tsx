@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { getApiBaseUrl } from '../config/api'
 
 interface User {
   id: number
@@ -21,8 +22,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
@@ -43,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     formData.append('username', username)
     formData.append('password', password)
 
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${getApiBaseUrl()}/auth/login`, {
       method: 'POST',
       body: formData,
     })
