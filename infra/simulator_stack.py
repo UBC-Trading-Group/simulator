@@ -123,6 +123,9 @@ class SimulatorStack(Stack):
         if db_credentials_secret is None:
             raise ValueError("Expected RDS instance to have an attached secret")
 
+        # Ensure the secret is deleted when stack is destroyed
+        db_credentials_secret.apply_removal_policy(RemovalPolicy.DESTROY)
+
         # Attach for later use (ECS task environment)
         self._db_credentials_secret = db_credentials_secret
         self._db_name = db_name
@@ -173,6 +176,7 @@ class SimulatorStack(Stack):
                     port=cache_cluster.attr_redis_endpoint_port,
                 )
             ),
+            removal_policy=RemovalPolicy.DESTROY,
         )
         self._redis_url_secret = redis_url_secret
         self._redis_security_group = redis_sg
