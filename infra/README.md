@@ -36,7 +36,7 @@ This will create a virtual environment and install the dependencies defined in
 Bootstrap your AWS environment (per account/region) once:
 
 ```bash
-uv run cdk bootstrap
+cdk bootstrap
 ```
 
 ## Build & deploy
@@ -51,7 +51,7 @@ uv run cdk bootstrap
 2. Deploy the stack (from the `infra` directory):
 
    ```bash
-   uv run cdk deploy SimulatorStack
+   cdk deploy SimulatorStack
    ```
 
    This will:
@@ -71,7 +71,7 @@ When you're done testing or the competition is over, destroy the stack to avoid
 charges:
 
 ```bash
-uv run cdk destroy SimulatorStack
+cdk destroy SimulatorStack
 ```
 
 This removes all resources defined in `SimulatorStack` (RDS, Redis, ECS, S3,

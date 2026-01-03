@@ -4,3 +4,8 @@
 .env.development.local
 .env.test.local
 .env.production.local
+
+__pycache__/
+
+cdk.out/
+cdk.context.json

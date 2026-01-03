@@ -9,6 +9,7 @@ This provisions:
 - S3 bucket + CloudFront distribution for the Vite React frontend
 """
 
+from pathlib import Path
 from typing import Dict
 
 import aws_cdk as cdk
@@ -122,24 +123,9 @@ class SimulatorStack(Stack):
         if db_credentials_secret is None:
             raise ValueError("Expected RDS instance to have an attached secret")
 
-        # Build a DATABASE_URL secret that the app can consume directly
-        db_url_secret = secretsmanager.Secret(
-            self,
-            "DatabaseUrlSecret",
-            description="PostgreSQL connection URL for the trading simulator backend.",
-            secret_string_value=cdk.SecretValue.unsafe_plain_text(
-                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
-                    username=db_credentials_secret.secret_value_from_json("username"),
-                    password=db_credentials_secret.secret_value_from_json("password"),
-                    host=db_instance.db_instance_endpoint_address,
-                    port=db_instance.db_instance_endpoint_port,
-                    db_name=db_name,
-                )
-            ),
-        )
-
-        # Attach for later use
-        self._db_url_secret = db_url_secret
+        # Attach for later use (ECS task environment)
+        self._db_credentials_secret = db_credentials_secret
+        self._db_name = db_name
 
         return db_instance
 
@@ -176,19 +162,18 @@ class SimulatorStack(Stack):
             vpc_security_group_ids=[redis_sg.security_group_id],
         )
 
-        # Store configuration endpoint as a secret-formatted URL
+        # Store primary node endpoint as a secret-formatted URL (single-node cluster has no configuration endpoint)
         redis_url_secret = secretsmanager.Secret(
             self,
             "RedisUrlSecret",
             description="Redis connection URL for the trading simulator backend.",
             secret_string_value=cdk.SecretValue.unsafe_plain_text(
                 "redis://{host}:{port}".format(
-                    host=cache_cluster.attr_configuration_endpoint_address,
-                    port=cache_cluster.attr_configuration_endpoint_port,
+                    host=cache_cluster.attr_redis_endpoint_address,
+                    port=cache_cluster.attr_redis_endpoint_port,
                 )
             ),
         )
-
         self._redis_url_secret = redis_url_secret
         self._redis_security_group = redis_sg
 
@@ -231,10 +216,20 @@ class SimulatorStack(Stack):
             "LOG_LEVEL": "INFO",
             # Allow CORS from anywhere for now; you can tighten this later.
             "BACKEND_CORS_ORIGINS": '["*"]',
+            "DB_HOST": db_instance.db_instance_endpoint_address,
+            "DB_PORT": db_instance.db_instance_endpoint_port,
+            "DB_NAME": self._db_name,
         }
 
         secrets_env: Dict[str, ecs.Secret] = {
-            "DATABASE_URL": ecs.Secret.from_secrets_manager(self._db_url_secret),
+            "DB_USERNAME": ecs.Secret.from_secrets_manager(
+                self._db_credentials_secret,
+                field="username",
+            ),
+            "DB_PASSWORD": ecs.Secret.from_secrets_manager(
+                self._db_credentials_secret,
+                field="password",
+            ),
             "REDIS_URL": ecs.Secret.from_secrets_manager(self._redis_url_secret),
         }
 
@@ -265,7 +260,7 @@ class SimulatorStack(Stack):
 
         # Health check tuning (optional)
         service.target_group.configure_health_check(
-            path="/api/v1/health",
+            path="/health",
             healthy_http_codes="200-399",
             interval=Duration.seconds(30),
             timeout=Duration.seconds(5),
@@ -307,10 +302,17 @@ class SimulatorStack(Stack):
         )
 
         # Deploy built assets from the frontend dist directory
+        frontend_dist_path = Path(__file__).parent.parent / "frontend" / "dist"
+        if not frontend_dist_path.exists() or not frontend_dist_path.is_dir():
+            raise FileNotFoundError(
+                f"Frontend dist directory not found at {frontend_dist_path}. "
+                "Please build the frontend first by running 'npm run build' in the frontend directory."
+            )
+
         s3_deployment.BucketDeployment(
             self,
             "DeployFrontend",
-            sources=[s3_deployment.Source.asset("../frontend/dist")],
+            sources=[s3_deployment.Source.asset(str(frontend_dist_path))],
             destination_bucket=bucket,
             distribution=distribution,
             distribution_paths=["/*"],
