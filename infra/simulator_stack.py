@@ -43,7 +43,7 @@ class SimulatorStack(Stack):
             redis=redis,
         )
 
-        frontend_distribution = self._create_frontend()
+        frontend_distribution = self._create_frontend(backend_service)
 
         # Allow ECS tasks to reach DB and Redis
         db_instance.connections.allow_default_port_from(
@@ -272,7 +272,9 @@ class SimulatorStack(Stack):
 
     # --- Frontend ------------------------------------------------------------
 
-    def _create_frontend(self) -> cloudfront.Distribution:
+    def _create_frontend(
+        self, backend_service: ecs_patterns.ApplicationLoadBalancedFargateService
+    ) -> cloudfront.Distribution:
         bucket = s3.Bucket(
             self,
             "FrontendBucket",
@@ -283,6 +285,13 @@ class SimulatorStack(Stack):
             auto_delete_objects=True,
         )
 
+        # Create backend origin for API and WebSocket
+        backend_origin = origins.HttpOrigin(
+            backend_service.load_balancer.load_balancer_dns_name,
+            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+            http_port=80,
+        )
+
         distribution = cloudfront.Distribution(
             self,
             "FrontendDistribution",
@@ -291,6 +300,22 @@ class SimulatorStack(Stack):
                 origin=origins.S3Origin(bucket),
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
             ),
+            additional_behaviors={
+                "/api/*": cloudfront.BehaviorOptions(
+                    origin=backend_origin,
+                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                    cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
+                ),
+                "/ws/*": cloudfront.BehaviorOptions(
+                    origin=backend_origin,
+                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                    cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
+                ),
+            },
             error_responses=[
                 cloudfront.ErrorResponse(
                     http_status=404,
