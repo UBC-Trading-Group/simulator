@@ -84,6 +84,21 @@ class OrderBook:
                 self.sells[ticker] = []
             return self.sells[ticker]
 
+    def get_bids(self, ticker: str):
+        return [
+            entry[self.ORDER_OBJ_IDX]
+            for entry in sorted(self.buys.get(ticker, []), key=lambda x: -x[0])
+        ]
+
+    def get_asks(self, ticker: str):
+        return [
+            entry[self.ORDER_OBJ_IDX]
+            for entry in sorted(self.sells.get(ticker, []), key=lambda x: x[0])
+        ]
+
+    def has_ticker(self, ticker: str) -> bool:
+        return ticker in self.buys or ticker in self.sells
+
     def _add_order_to_trader_mapping(self, order: OrderModel):
         user_id = order.user_id
         if user_id not in self.trader_mapping:
