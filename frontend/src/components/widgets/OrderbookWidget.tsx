@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useOrderbook } from "../../hooks/useOrderbook";
+import type { Order } from "../../hooks/useOrderbook";
 
 export default function OrderBook() {
   const [search, setSearch] = useState("");
@@ -75,7 +76,7 @@ export default function OrderBook() {
           <div className="grid grid-cols-2 h-64 overflow-y-auto flex-1">
             {/* BID Side */}
             <div className="bg-white dark:bg-dark-2 h-72 overflow-y-scroll custom-scrollbar">
-              {bids.length === 0 ? <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No bids yet</div> : (bids.map((order, index) => (
+              {bids.length === 0 ? <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No bids yet</div> : (bids.map((order: Order, index: number) => (
                 <div 
                   key={`bid-${index}`}
                   className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125 transition-colors"
@@ -103,7 +104,7 @@ export default function OrderBook() {
 
             {/* ASK Side */}
             <div className="bg-white dark:bg-dark-2 border-l border-gray-200 dark:border-ui h-72 overflow-y-scroll custom-scrollbar">
-               {asks.length === 0 ? <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No asks yet</div> : (asks.map((order, index) => (
+               {asks.length === 0 ? <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No asks yet</div> : (asks.map((order: Order, index: number) => (
                 <div 
                   key={`ask-${index}`}
                   className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125  transition-colors"

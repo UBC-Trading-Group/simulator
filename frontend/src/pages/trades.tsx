@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PriceChart from "../components/widgets/chart";
 import { useAuth } from "../contexts/AuthContext";
+import { getApiBaseUrl } from "../config/api";
 
 const leaderboard = [
   { name: "Team Cup", change: "+$435.00", positive: true },
@@ -9,12 +10,6 @@ const leaderboard = [
   { name: "Moinul Hasan Nayem", change: "-$826.00", positive: false },
   { name: "Dr. Jubed Ahmed", change: "-$1,435.90", positive: false },
   { name: "AR Jakir Alp", change: "-$2,228.00", positive: false },
-];
-
-const recentOrders = [
-  { ticker: "NOVA", company: "NovaScala Systems Inc.", shares: 23, amount: "$420.84", date: "14 Apr 2022" },
-  { ticker: "GENX", company: "Genexa Biotechnologies", shares: 23, amount: "$100.00", date: "05 Apr 2022" },
-  { ticker: "AURA", company: "Aurora Financial Group", shares: 23, amount: "$244.20", date: "02 Apr 2022" },
 ];
 
 interface Position {
@@ -42,8 +37,6 @@ interface Order {
   created_at?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
-
 function TradesPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,7 +60,7 @@ function TradesPage() {
 
     const fetchPortfolio = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/portfolio/`, {
+        const response = await fetch(`${getApiBaseUrl()}/portfolio/`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -109,7 +102,7 @@ function TradesPage() {
     const fetchOrders = async () => {
       try {
         setOrdersError(null);
-        const response = await fetch(`${API_BASE_URL}/trading/orders`, {
+        const response = await fetch(`${getApiBaseUrl()}/trading/orders`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
