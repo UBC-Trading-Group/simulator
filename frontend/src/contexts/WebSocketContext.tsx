@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useCallback, useMemo, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { getWebSocketUrl } from '../config/api';
 
 interface WebSocketContextType {
   latencyMs: number | null;
@@ -17,13 +18,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const wsUrl = useMemo(() => {
-    const envUrl = import.meta.env.VITE_WS_URL as string | undefined;
-    if (envUrl) return envUrl;
-    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const host = window.location.hostname || 'localhost';
-    return `${proto}://${host}:8000/ws/market`;
-  }, []);
+  const wsUrl = useMemo(() => getWebSocketUrl(), []);
 
   const handleMessage = useCallback((data: any) => {
     console.log(data);

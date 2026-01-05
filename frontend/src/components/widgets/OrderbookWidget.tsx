@@ -90,7 +90,7 @@ export default function OrderBook({
         {isError && bids.length === 0 && asks.length === 0 && (
           <div className="text-red-500 mb-4 pl-1">Ticker "{ticker}" not found.</div>
         )}
-        {isLoading && <div className="text-gray-500 mb-4 pl-1">Loading order book…</div>}
+        {isLoading && <div className="text-gray-500 mb-4 pl-1">Loading order book...</div>}
 
         {/* Order Book Table */}
         <div className="bg-white dark:bg-dark-2 rounded-lg shadow-sm dark:shadow-none border border-gray-200 dark:border-ui  flex flex-col flex-1">

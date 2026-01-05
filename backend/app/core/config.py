@@ -6,13 +6,18 @@ import json
 import os
 from typing import List, Optional, Union
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql://user:password@localhost/trading_simulator"
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[str] = None
+    DB_NAME: Optional[str] = None
+    DB_USERNAME: Optional[str] = None
+    DB_PASSWORD: Optional[str] = None
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -33,6 +38,24 @@ class Settings(BaseSettings):
                 # If not JSON, treat as comma-separated string
                 return [origin.strip() for origin in v.split(",")]
         return v
+
+    @model_validator(mode="after")
+    def assemble_database_url(self):
+        has_db_components = all(
+            [
+                self.DB_HOST,
+                self.DB_PORT,
+                self.DB_NAME,
+                self.DB_USERNAME,
+                self.DB_PASSWORD,
+            ]
+        )
+        if has_db_components:
+            self.DATABASE_URL = (
+                f"postgresql://{self.DB_USERNAME}:{self.DB_PASSWORD}"
+                f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+            )
+        return self
 
     # API
     API_V1_STR: str = "/api/v1"

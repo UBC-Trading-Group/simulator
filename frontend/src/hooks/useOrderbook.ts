@@ -1,4 +1,5 @@
 import useSWR from "swr";
+import { getApiBaseUrl } from "../config/api";
 
 export interface Order {
   ticker: string;
@@ -14,9 +15,6 @@ export interface OrderbookResponse {
   asks: Order[];
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
-
 const fetcher = (url: string) =>
   fetch(url).then((r) => {
     if (!r.ok) {
@@ -30,7 +28,7 @@ export function useOrderbook(ticker: string) {
   const shouldFetch = normalizedTicker !== "";
 
   const { data, error, isLoading } = useSWR<OrderbookResponse>(
-    shouldFetch ? `${API_BASE_URL}/orderbook/${encodeURIComponent(normalizedTicker)}` : null,
+    shouldFetch ? `${getApiBaseUrl()}/orderbook/${encodeURIComponent(normalizedTicker)}` : null,
     fetcher,
     {
       refreshInterval: 700,
