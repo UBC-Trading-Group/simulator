@@ -15,13 +15,20 @@ export interface OrderbookResponse {
   asks: Order[];
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) {
+      throw new Error(`Orderbook fetch failed: ${r.status}`);
+    }
+    return r.json();
+  });
 
 export function useOrderbook(ticker: string) {
-  const shouldFetch = ticker && ticker.trim() !== "";
+  const normalizedTicker = (ticker || "").trim().toUpperCase();
+  const shouldFetch = normalizedTicker !== "";
 
   const { data, error, isLoading } = useSWR<OrderbookResponse>(
-    shouldFetch ? `${getApiBaseUrl()}/orderbook/${ticker}` : null,
+    shouldFetch ? `${getApiBaseUrl()}/orderbook/${encodeURIComponent(normalizedTicker)}` : null,
     fetcher,
     {
       refreshInterval: 700,
@@ -32,7 +39,7 @@ export function useOrderbook(ticker: string) {
   return {
     bids: data?.bids ?? [],
     asks: data?.asks ?? [],
-    ticker: data?.ticker,
+    ticker: data?.ticker ?? normalizedTicker,
     isLoading,
     isError: error,
   };
