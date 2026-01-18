@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import PriceChart from "../components/widgets/chart";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiBaseUrl } from "../config/api";
+import { useNews } from "../hooks/useNews";
 
 const leaderboard = [
   { name: "Team Cup", change: "+$435.00", positive: true },
@@ -42,6 +43,7 @@ function TradesPage() {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const { token, isAuthenticated } = useAuth();
+    const { news } = useNews();
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [realizedPnL, setRealizedPnL] = useState<number | null>(null);
   const [volumeTraded, setVolumeTraded] = useState<number | null>(null);
@@ -282,7 +284,7 @@ function TradesPage() {
               <h3>Recent News</h3>
               <button className="link-button">View All</button>
             </div>
-            {true ? (
+            {isAuthenticated ? (
               <>
                 <div className="flex gap-2 mb-6">
                   {["All", "My Stocks", "Market"].map((label:string) => <>
@@ -293,9 +295,7 @@ function TradesPage() {
                 </div>
 
                 <div className="space-y-0">
-                  {[0,1].map(()=> (
-
-                    
+                  {news.map((n)=> (
                     <div className="relative pl-4 py-1 mb-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
                       <div className="absolute left-0 top-0 w-1 h-full bg-green-500 rounded-full"></div>
                       <div className="flex gap-4">
@@ -305,10 +305,10 @@ function TradesPage() {
                               </h3>
                               <div className="flex items-center gap-2 mb-1">
                                   <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
-                                      NOVA
+                                      {n.id}
                                   </span>
                               </div>
-                            <p className="text-xs text-gray-500">Bloomberg • 2 hours ago</p>
+                            <p className="text-xs text-gray-500">{n.ts_release_ms}</p>
                         </div>
                     </div>
                 </div>
@@ -316,7 +316,7 @@ function TradesPage() {
               </div>
             </>
             ) : (
-              <h1>ad</h1>
+                <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your news.</div>
             )}
 
              
