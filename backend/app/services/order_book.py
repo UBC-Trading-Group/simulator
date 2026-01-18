@@ -83,6 +83,30 @@ class OrderBook:
             self.user_state_mapping[user_id] = UserState(user_id=user_id)
         return self.user_state_mapping[user_id]
 
+    def _apply_trade_to_user(
+        self,
+        user_id: str,
+        ticker: str,
+        side: OrderSide,
+        quantity: int,
+        price: float,
+    ):
+        user_state = self._get_user_state(user_id)
+
+        trade = {
+            "ticker": ticker,
+            "side": side.value,
+            "quantity": quantity,
+            "price": price,
+        }
+
+        user_state.add_fulfilled_trades(trade)
+
+        if side == OrderSide.BUY:
+            user_state.cash -= quantity * price
+        else:
+            user_state.cash += quantity * price
+
     def _get_book(
         self, ticker: str, side: OrderSide
     ) -> List[Tuple[float, int, OrderModel]]:
@@ -384,6 +408,24 @@ class OrderBook:
 
             self.last_traded_price[ticker] = trade_price
 
+            # Apply trade to user (USER STATE)
+            self._apply_trade_to_user(
+                user_id=order.user_id,
+                ticker=ticker,
+                side=order.side,
+                quantity=traded_qty,
+                price=trade_price,
+            )
+
+            # Apply trade to opposite user (USER STATE)
+            self._apply_trade_to_user(
+                user_id=opp_order.user_id,
+                ticker=ticker,
+                side=opp_order.side,
+                quantity=traded_qty,
+                price=trade_price,
+            )
+
             opp_order.quantity -= traded_qty
             quantity -= traded_qty
 
@@ -398,11 +440,15 @@ class OrderBook:
         if quantity == initial_quantity:
             # Nothing matched
             self.add_order(order)
+            # Add to user's unfulfilled trades
+            self._get_user_state(order.user_id).add_unfulfilled_trade(order)
             return OrderStatus.OPEN, initial_quantity
         elif quantity > 0:
             # Partially matched
             order.quantity = quantity
             self.add_order(order)
+            # Add to user's unfulfilled trades
+            self._get_user_state(order.user_id).add_unfulfilled_trade(order)
             return OrderStatus.PARTIALLY_FILLED, quantity
         else:
             # Fully matched
