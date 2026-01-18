@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Set, Tuple
 
 from app.schemas.order import OrderModel, OrderSide, OrderStatus
-from backend.app.services.user import UserState
+from app.services.user import UserState
 
 
 class OrderBook:
