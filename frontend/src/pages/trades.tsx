@@ -276,6 +276,51 @@ function TradesPage() {
                 <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
               )}
             </section>
+
+            <section className="dash-card">
+            <div className="card-head">
+              <h3>Recent News</h3>
+              <button className="link-button">View All</button>
+            </div>
+            {true ? (
+              <>
+                <div className="flex gap-2 mb-6">
+                  {["All", "My Stocks", "Market"].map((label:string) => <>
+                    <button className="px-2 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs font-medium">
+                        {label}
+                    </button>
+                    </>)}
+                </div>
+
+                <div className="space-y-0">
+                  {[0,1].map(()=> (
+
+                    
+                    <div className="relative pl-4 py-1 mb-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                      <div className="absolute left-0 top-0 w-1 h-full bg-green-500 rounded-full"></div>
+                      <div className="flex gap-4">
+                          <div className="flex-1 min-w-0">
+                              <h3 className="text-xs font-semibold text-gray-800 mb-2 leading-tight">
+                                  NOVA shares surge 12% on strong quarterly earnings report
+                              </h3>
+                              <div className="flex items-center gap-2 mb-1">
+                                  <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
+                                      NOVA
+                                  </span>
+                              </div>
+                            <p className="text-xs text-gray-500">Bloomberg • 2 hours ago</p>
+                        </div>
+                    </div>
+                </div>
+                  ))}
+              </div>
+            </>
+            ) : (
+              <h1>ad</h1>
+            )}
+
+             
+          </section>
           </div>
         </div>
       </div>
