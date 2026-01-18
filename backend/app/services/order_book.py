@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Set, Tuple
 
 from app.schemas.order import OrderModel, OrderSide, OrderStatus
+from backend.app.services.user import UserState
 
 
 class OrderBook:
@@ -49,6 +50,11 @@ class OrderBook:
         self.trader_mapping: Dict[str, Set[str]] = {}
 
         """
+        User state mapping gives us quick access to user state
+        """
+        self.user_state_mapping: Dict[str, object] = {}
+
+        """
         Gives us quick check if order is fulfilled 
         """
         self.fulfilled_orders: Set[str] = set()
@@ -70,6 +76,12 @@ class OrderBook:
         self.PRICE_IDX = 0
         self.QUANTITY_IDX = 1
         self.ORDER_OBJ_IDX = 2
+
+    def _get_user_state(self, user_id: str) -> UserState:
+        # init user if not exist
+        if user_id not in self.user_state_mapping:
+            self.user_state_mapping[user_id] = UserState(user_id=user_id)
+        return self.user_state_mapping[user_id]
 
     def _get_book(
         self, ticker: str, side: OrderSide

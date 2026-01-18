@@ -8,9 +8,8 @@ class UserState:
     }
     """
 
-    def __init__(self, user_id, username):
+    def __init__(self, user_id):
         self.user_id = user_id
-        self.username = username
         self.cash = 0
 
         self.portfolio = {}  # contains user's portfolio
