@@ -28,6 +28,9 @@ const BuySellWidget: React.FC = () => {
   const [orderBook, setOrderBook] = useState<OrderBookSnapshot | null>(null);
   const [isLoadingBook, setIsLoadingBook] = useState(false);
   const [bookError, setBookError] = useState<string | null>(null);
+  const [hoverBuy, setHoverBuy] = useState(false);
+  const [hoverSell, setHoverSell] = useState(false);
+  const [hoverLimit, setHoverLimit] = useState(false);
 
   // Fetch portfolio to prime available tickers list
   useEffect(() => {
@@ -103,41 +106,21 @@ const BuySellWidget: React.FC = () => {
   // Require authentication to render trading controls
   if (!isAuthenticated) {
     return (
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 420,
-          border: '1px solid #E7E9F1',
-          background: 'var(--color-white)',
-          boxShadow: '0 25px 45px rgba(30, 33, 50, 0.08)',
-          padding: '28px 28px 32px',
-          borderRadius: 18,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1B212D' }}>
-            Place Market Order
-          </h2>
+      <div style={widgetStyles.card}>
+        <div style={widgetStyles.headerRow}>
+          <h3 style={widgetStyles.title}>Buy / Sell</h3>
           <div
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              borderRadius: 999,
-              padding: '8px 14px',
-              background: '#F4F6FB',
-              color: '#2E354A',
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: 0.5,
-              textTransform: 'uppercase',
+              ...widgetStyles.statusPill,
+              background: '#89273615',
+              color: '#892736',
             }}
           >
-            Login required
+            Access Locked
           </div>
         </div>
-        <div style={{ marginTop: 16, fontSize: 14, color: '#98A1B4' }}>
-          Please log in to view prices and place orders.
+        <div style={{ marginTop: 12, fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+          Log in to view real-time market data and execute trades.
         </div>
       </div>
     );
@@ -318,7 +301,7 @@ const BuySellWidget: React.FC = () => {
     <div style={widgetStyles.card}>
       {/* Header / status line */}
       <div style={widgetStyles.headerRow}>
-        <h2 style={widgetStyles.title}>Place Market Order</h2>
+        <h3 style={widgetStyles.title}>Buy / Sell</h3>
         {currentPrice !== null && selectedTicker && (
           <div style={widgetStyles.statusPill}>
             <span>{selectedTicker}</span>
@@ -402,6 +385,8 @@ const BuySellWidget: React.FC = () => {
           </div>
           <div style={widgetStyles.priceActions}>
             <button
+              onMouseEnter={() => setHoverBuy(true)}
+              onMouseLeave={() => setHoverBuy(false)}
               onClick={() => submitMarketOrder('buy')}
               disabled={
                 currentPrice === null ||
@@ -410,19 +395,21 @@ const BuySellWidget: React.FC = () => {
                 !isAuthenticated
               }
               style={{
-                ...widgetStyles.pillButton('buy'),
+                ...widgetStyles.pillButton('buy', hoverBuy),
                 opacity:
                   currentPrice === null ||
-                  !isValidQuantity(quantity) ||
-                  isSubmitting ||
-                  !isAuthenticated
-                    ? 0.6
+                    !isValidQuantity(quantity) ||
+                    isSubmitting ||
+                    !isAuthenticated
+                    ? 0.5
                     : 1,
               }}
             >
               BUY @ ${formatPrice(currentPrice)}
             </button>
             <button
+              onMouseEnter={() => setHoverSell(true)}
+              onMouseLeave={() => setHoverSell(false)}
               onClick={() => submitMarketOrder('sell')}
               disabled={
                 currentPrice === null ||
@@ -431,13 +418,13 @@ const BuySellWidget: React.FC = () => {
                 !isAuthenticated
               }
               style={{
-                ...widgetStyles.pillButton('sell'),
+                ...widgetStyles.pillButton('sell', hoverSell),
                 opacity:
                   currentPrice === null ||
-                  !isValidQuantity(quantity) ||
-                  isSubmitting ||
-                  !isAuthenticated
-                    ? 0.6
+                    !isValidQuantity(quantity) ||
+                    isSubmitting ||
+                    !isAuthenticated
+                    ? 0.5
                     : 1,
               }}
             >
@@ -502,6 +489,8 @@ const BuySellWidget: React.FC = () => {
         </div>
 
         <button
+          onMouseEnter={() => setHoverLimit(true)}
+          onMouseLeave={() => setHoverLimit(false)}
           onClick={submitLimitOrder}
           disabled={
             !isValidQuantity(quantity) ||
@@ -510,13 +499,13 @@ const BuySellWidget: React.FC = () => {
             !isAuthenticated
           }
           style={{
-            ...widgetStyles.limitButton,
+            ...widgetStyles.limitButton(hoverLimit),
             opacity:
               !isValidQuantity(quantity) ||
-              !isValidPrice(limitPrice) ||
-              isSubmitting ||
-              !isAuthenticated
-                ? 0.6
+                !isValidPrice(limitPrice) ||
+                isSubmitting ||
+                !isAuthenticated
+                ? 0.5
                 : 1,
           }}
         >

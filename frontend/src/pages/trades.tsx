@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PriceChart from "../components/widgets/chart";
+import BuySellWidget from "../components/widgets/BuySellWidget";
 import { useAuth } from "../contexts/AuthContext";
 
 const leaderboard = [
@@ -144,6 +145,7 @@ function TradesPage() {
         </div>
         <nav className="dash-nav">
           <button className={isActive("/trades") ? "active" : ""} onClick={() => navigate("/trades")}>Dashboard</button>
+          <button className={isActive("/trade") ? "active" : ""} onClick={() => navigate("/trade")}>Buy / Sell</button>
           <button className={isActive("/portfolio") ? "active" : ""} onClick={() => navigate("/portfolio")}>Portfolio</button>
           <button className={isActive("/transactions") ? "active" : ""} onClick={() => navigate("/transactions")}>Transactions</button>
           <button className={isActive("/orderbook") ? "active" : ""} onClick={() => navigate("/orderbook")}>Order Book</button>
@@ -283,6 +285,8 @@ function TradesPage() {
                 <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
               )}
             </section>
+
+            <BuySellWidget />
           </div>
         </div>
       </div>
