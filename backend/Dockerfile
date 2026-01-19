@@ -28,9 +28,9 @@ RUN uv sync --frozen
 # Copy application code
 COPY . .
 
-# Copy entrypoint script
+# Copy entrypoint script and fix line endings (Windows compatibility)
 COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
