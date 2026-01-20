@@ -1,16 +1,33 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useNews } from "../hooks/useNews";
+import { useActiveNews, useNewsStatus } from "../hooks/useNews";
 import { useAuth } from "../contexts/AuthContext";
 
 function NewsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
-  const { news, isLoading, isError } = useNews();
+  const { activeNews, simTimeSeconds, activeCount, isLoading, isError } = useActiveNews();
+  const { status: newsStatus } = useNewsStatus();
   const isActive = (path: string) => location.pathname === path;
 
-  const formatDate = (tsMs: number) =>
-    tsMs ? new Date(tsMs).toLocaleString() : "--";
+  const formatSimTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}m ${secs}s`;
+  };
+
+  const getImpactColor = (effect: number) => {
+    if (effect > 0.01) return "#059669";
+    if (effect > 0.005) return "#10b981";
+    if (effect < -0.01) return "#dc2626";
+    if (effect < -0.005) return "#ef4444";
+    return "#f59e0b";
+  };
+
+  const getImpactLabel = (effect: number) => {
+    const pct = (effect * 100).toFixed(2);
+    return effect >= 0 ? `+${pct}%` : `${pct}%`;
+  };
 
   return (
     <div className="dashboard-shell">
@@ -43,31 +60,31 @@ function NewsPage() {
           {isAuthenticated && (
             <div className="news-feed">
               <div className="news-head">
-                <h3>Active & Upcoming News</h3>
+                <h3>Active News Events</h3>
                 <div className="news-meta">
                   {isLoading && <span>Loading…</span>}
                   {isError && <span style={{ color: "#b91c1c" }}>Could not load news</span>}
+                  {!isLoading && !isError && newsStatus && (
+                    <span style={{ color: "#6b7280" }}>
+                      Simulation Time: {formatSimTime(newsStatus.sim_time_seconds)}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="news-list">
-                {(!news || news.length === 0) && !isLoading && !isError && (
-                  <div className="news-item empty">No news at the moment.</div>
+                {activeCount === 0 && !isLoading && !isError && (
+                  <div className="news-item empty">
+                    <p>No active news events.</p>
+                    <p style={{ fontSize: "14px", color: "#6b7280", marginTop: "8px" }}>
+                      News will automatically activate at 100s, 200s, 300s, etc. of simulation time.
+                    </p>
+                  </div>
                 )}
-                {news.map((item) => (
+                {activeNews.map((item) => (
                   <div className="news-item" key={item.id}>
-                    <div className="news-time">{formatDate(item.ts_release_ms)}</div>
                     <div className="news-body">
                       <h4 className="news-title">{item.headline}</h4>
                       <p className="news-desc">{item.description}</p>
-                      <div className="news-tags">
-                        <span className="news-tag">ID {item.id}</span>
-                        {item.decay_halflife_s != null && (
-                          <span className="news-tag">Halflife: {item.decay_halflife_s}s</span>
-                        )}
-                        {item.magnitude_top != null && (
-                          <span className="news-tag">Impact: {item.magnitude_top}</span>
-                        )}
-                      </div>
                     </div>
                   </div>
                 ))}

@@ -6,8 +6,9 @@ from app.services.instrument_manager import InstrumentManager
 
 
 class GBMManager:
-    def __init__(self, instrument_manager: InstrumentManager):
+    def __init__(self, instrument_manager: InstrumentManager, news_engine=None):
         self.instruments: list[Instrument] = instrument_manager.get_all_instruments()
+        self.news_engine = news_engine
         self.gbmas_instances = {
             instrument.id: GeometricBrownianMotionAssetSimulator(
                 instrument.s_0, instrument.mean, instrument.variance, 1 / 252
@@ -19,8 +20,16 @@ class GBMManager:
         self.is_running = True
         while self.is_running:
             try:
-                for _, gbm_instance in self.gbmas_instances.items():
-                    # this updates the current_price field of the gbm_instance
+                for ticker, gbm_instance in self.gbmas_instances.items():
+                    # Get news-based drift for this instrument
+                    drift = 0.0
+                    if self.news_engine:
+                        drift = self.news_engine.get_instrument_drift(ticker)
+                    
+                    # Update the GBM with news drift
+                    gbm_instance.set_drift(drift)
+                    
+                    # This updates the current_price field of the gbm_instance
                     gbm_instance()
                 await asyncio.sleep(1)
             except asyncio.CancelledError:

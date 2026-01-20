@@ -65,7 +65,7 @@ const BuySellWidget: React.FC = () => {
     };
 
     fetchPortfolio();
-    const interval = setInterval(fetchPortfolio, 5000);
+    const interval = setInterval(fetchPortfolio, 1000); // Update every 1 second
     return () => {
       isCancelled = true;
       clearInterval(interval);
@@ -103,30 +103,8 @@ const BuySellWidget: React.FC = () => {
     }
   }, [availableTickers, selectedTicker]);
 
-  // Require authentication to render trading controls
-  if (!isAuthenticated) {
-    return (
-      <div style={widgetStyles.card}>
-        <div style={widgetStyles.headerRow}>
-          <h3 style={widgetStyles.title}>Buy / Sell</h3>
-          <div
-            style={{
-              ...widgetStyles.statusPill,
-              background: '#89273615',
-              color: '#892736',
-            }}
-          >
-            Access Locked
-          </div>
-        </div>
-        <div style={{ marginTop: 12, fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
-          Log in to view real-time market data and execute trades.
-        </div>
-      </div>
-    );
-  }
-
   // Load order book snapshot for the selected ticker
+  // IMPORTANT: This hook must run even when not authenticated to maintain hook order
   useEffect(() => {
     if (!selectedTicker || !isAuthenticated || !token) {
       setOrderBook(null);
@@ -173,7 +151,7 @@ const BuySellWidget: React.FC = () => {
     };
 
     fetchOrderBook();
-    const interval = setInterval(fetchOrderBook, 3000);
+    const interval = setInterval(fetchOrderBook, 500); // Update every 0.5 seconds
     return () => {
       isCancelled = true;
       clearInterval(interval);
@@ -302,6 +280,29 @@ const BuySellWidget: React.FC = () => {
     }
   };
 
+  // Render locked state if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div style={widgetStyles.card}>
+        <div style={widgetStyles.headerRow}>
+          <h3 style={widgetStyles.title}>Buy / Sell</h3>
+          <div
+            style={{
+              ...widgetStyles.statusPill,
+              background: '#89273615',
+              color: '#892736',
+            }}
+          >
+            Access Locked
+          </div>
+        </div>
+        <div style={{ marginTop: 12, fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+          Log in to view real-time market data and execute trades.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={widgetStyles.card}>
       {/* Header / status line */}
@@ -377,7 +378,7 @@ const BuySellWidget: React.FC = () => {
             )}
             {!isLoadingBook && !bookError && orderBook && (
               <span>
-                Mid ${formatPrice(orderBook.mid_price ?? null)} • Bid{' '}
+                Bid{' '}
                 {orderBook.best_bid
                   ? `$${formatPrice(orderBook.best_bid.price)} x ${orderBook.best_bid.quantity}`
                   : '—'}{' '}

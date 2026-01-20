@@ -13,18 +13,54 @@ class LiquidityBot:
         self.mid_price = mid_price
         self.inventory = inventory
 
-        self.base_spread = 0.1  # per suggestion
+        self.base_spread = 0.005  # 0.5% base spread for realistic bid-ask
         self.stress_coefficient = random.uniform(
-            0.05, 0.15
+            0.001, 0.003
         )  # simulates investors in the market
         self.inventory_coefficient = random.uniform(
-            0.005, 0.05
+            0.0001, 0.001
         )  # how risk-averse the bot is
-        self.quote_noise_sigma = random.uniform(0, 0.05)  # per DC discussion
+        self.quote_noise_sigma = random.uniform(0, 0.001)  # small noise
+        
+        # Random walk parameters for price noise
+        self.price_volatility = 0.0045  # 0.45% volatility per tick for active movement
+        self.mean_reversion = 0.97  # moderate mean reversion
+        self.initial_price = mid_price
+        
+        # Inventory pressure - adjust mid price based on inventory
+        self.inventory_pressure_coeff = 0.002  # 0.2% price shift per unit of inventory for faster reaction
+        
+        # Inventory limits to prevent extreme positions
+        self.max_inventory = 200  # Maximum long position
+        self.min_inventory = -200  # Maximum short position
 
     # TODO: adjust with bid and ask externally
     def adjust_mid_price(self, mid_price):
         self.mid_price = mid_price
+    
+    def update_inventory(self, inventory_change: int):
+        """
+        Update inventory when orders are filled.
+        Positive = bought (inventory increases)
+        Negative = sold (inventory decreases)
+        """
+        self.inventory += inventory_change
+    
+    def apply_inventory_pressure(self):
+        """
+        Adjust mid price based on inventory to respond to order flow.
+        If inventory is positive (bought a lot), lower price to incentivize selling.
+        If inventory is negative (sold a lot), raise price to incentivize buying.
+        """
+        # Cap inventory effect to prevent extreme price movements
+        capped_inventory = max(-100, min(100, self.inventory))
+        inventory_pressure = -capped_inventory * self.inventory_pressure_coeff * self.mid_price
+        
+        # Apply pressure to mid price
+        self.mid_price += inventory_pressure
+        
+        # Ensure price stays positive (minimum 10% of initial price)
+        self.mid_price = max(self.mid_price, self.initial_price * 0.1)
 
     def compute_spread(self, drift_term):
         """
@@ -56,6 +92,11 @@ class LiquidityBot:
         return max(50 - 10 * level, 10)
 
     def generate_order_book(self, drift_term, levels=3):
+        # Note: mid_price is updated externally from GBM (which includes news drift)
+        # Then we apply inventory pressure to respond to order flow
+        self.apply_inventory_pressure()
+        
+        # Compute spread (drift_term should be 0 for liquidity bots)
         spread = self.compute_spread(drift_term)
 
         # Initial bid and ask at level 0
@@ -69,8 +110,13 @@ class LiquidityBot:
             bid_price = round(bid - lvl * spread, 2)
             ask_price = round(ask + lvl * spread, 2)
 
-            bids.append([bid_price, depth])
-            asks.append([ask_price, depth])
+            # Skip bid orders if inventory is too high (too long)
+            if self.inventory < self.max_inventory:
+                bids.append([bid_price, depth])
+            
+            # Skip ask orders if inventory is too low (too short)
+            if self.inventory > self.min_inventory:
+                asks.append([ask_price, depth])
 
         book_snapshot = {
             "type": "book_snapshot",

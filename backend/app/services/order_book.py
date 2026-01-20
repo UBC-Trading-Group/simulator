@@ -43,6 +43,11 @@ class OrderBook:
         Order mapping gives us quick access if we have order id 
         """
         self.order_mapping: Dict[str, OrderModel] = {}
+        
+        """
+        All orders ever placed (for history tracking)
+        """
+        self.all_orders: Dict[str, OrderModel] = {}
 
         """
         Trader mapping gives us quick access if we have trader id 
@@ -135,11 +140,24 @@ class OrderBook:
     def has_ticker(self, ticker: str) -> bool:
         return ticker in self.buys or ticker in self.sells
 
-    def _add_order_to_trader_mapping(self, order: OrderModel):
+    def _add_order_to_trader_mapping(self, order: OrderModel, execution_price: float = None):
         user_id = order.user_id
         if user_id not in self.trader_mapping:
             self.trader_mapping[user_id] = set()
         self.trader_mapping[user_id].add(order.id)
+        # Store a copy with execution price if provided, otherwise original
+        if execution_price and execution_price > 0:
+            order_copy = OrderModel(
+                id=order.id,
+                price=execution_price,
+                quantity=order.quantity,
+                ticker=order.ticker,
+                side=order.side,
+                user_id=order.user_id,
+            )
+            self.all_orders[order.id] = order_copy
+        else:
+            self.all_orders[order.id] = order
 
     def _get_trader_orders(self, user_id: str) -> Set[str]:
         return self.trader_mapping.get(user_id, set())
@@ -179,24 +197,43 @@ class OrderBook:
         return portfolio
 
     def get_trader_orders_with_status(self, user_id: str) -> List[dict]:
-        """Return all orders for a trader with a simple open/filled status."""
+        """Return all orders for a trader with proper status (open/partially_filled/filled), sorted by timestamp."""
         orders: List[dict] = []
         for order_id in self._get_trader_orders(user_id):
-            if order_id not in self.order_mapping:
+            # Get order from all_orders (includes filled orders)
+            if order_id not in self.all_orders:
                 continue
-            order = self.order_mapping[order_id]
-            status = "filled" if order_id in self.fulfilled_orders else "open"
+            original_order = self.all_orders[order_id]
+            
+            # Determine status
+            if order_id in self.fulfilled_orders:
+                status = "filled"
+                remaining_qty = 0
+            elif order_id in self.order_mapping:
+                current_order = self.order_mapping[order_id]
+                if current_order.quantity < original_order.quantity:
+                    status = "partially_filled"
+                else:
+                    status = "open"
+                remaining_qty = current_order.quantity
+            else:
+                # Order no longer in book but not in fulfilled - probably cancelled
+                continue
+            
             orders.append(
                 {
-                    "order_id": str(order.id),
-                    "symbol": order.ticker,
-                    "quantity": order.quantity,
-                    "price": order.price,
-                    "type": order.side.value,
+                    "order_id": str(original_order.id),
+                    "symbol": original_order.ticker,
+                    "quantity": original_order.quantity,
+                    "filled_quantity": original_order.quantity - remaining_qty,
+                    "price": original_order.price,
+                    "type": original_order.side.value,
                     "status": status,
+                    "created_at": original_order.created_at.isoformat() if hasattr(original_order, 'created_at') else None,
                 }
             )
-        # Keep newest-like ordering by ID insertion (UUID has no time ordering). Return as-is.
+        # Sort by timestamp, newest first
+        orders.sort(key=lambda x: x.get("created_at") or "", reverse=True)
         return orders
 
     def check_order_status(self, order: OrderModel) -> OrderStatus:
@@ -234,11 +271,11 @@ class OrderBook:
 
         if side == OrderSide.BUY:
             self.order_mapping[order.id] = order
-            self._add_order_to_trader_mapping(order)
+            # Don't call _add_order_to_trader_mapping here - already called in match_order
             heapq.heappush(book, (-price, quantity, order))
         elif side == OrderSide.SELL:
             self.order_mapping[order.id] = order
-            self._add_order_to_trader_mapping(order)
+            # Don't call _add_order_to_trader_mapping here - already called in match_order
             heapq.heappush(book, (price, quantity, order))
         else:
             raise ValueError("Invalid side")
@@ -364,17 +401,23 @@ class OrderBook:
 
     def match_order(
         self, order: OrderModel, is_liquidity_bot: bool = False
-    ) -> tuple[OrderStatus, int]:
+    ) -> tuple[OrderStatus, int, float]:
         """
         Matches buy with corresponding sell orders, or sell with buy orders.
         Matching is price-priority based (max bid vs min ask), partial fills allowed.
         Updates last traded price and order book.
-        Returns: (status, remaining quantity)
+        Returns: (status, remaining quantity, average execution price)
         """
         side = order.side
         ticker = order.ticker
         quantity = order.quantity
         initial_quantity = quantity
+        
+        # Will track order after we know execution price
+        
+        # Track total cost for weighted average price calculation
+        total_cost = 0.0
+        filled_quantity = 0
 
         # Select the heap for the opposite side
         if side == OrderSide.BUY:
@@ -388,7 +431,7 @@ class OrderBook:
         # Liquidity bot orders are added to book without matching
         if not opposite_heap or is_liquidity_bot:
             self.add_order(order)
-            return OrderStatus.OPEN, initial_quantity
+            return OrderStatus.OPEN, initial_quantity, 0.0
 
         while quantity > 0 and opposite_heap:
             best_entry = opposite_heap[0]
@@ -407,6 +450,10 @@ class OrderBook:
             trade_price = opp_order.price
 
             self.last_traded_price[ticker] = trade_price
+            
+            # Track for average execution price
+            total_cost += traded_qty * trade_price
+            filled_quantity += traded_qty
 
             # Apply trade to user (USER STATE)
             self._apply_trade_to_user(
@@ -436,21 +483,28 @@ class OrderBook:
                 # in this case, the order is fully matched
                 self.fulfilled_orders.add(opp_order.id)
 
+        # Calculate average execution price
+        avg_price = total_cost / filled_quantity if filled_quantity > 0 else 0.0
+
+        # Track order with execution price (for non-liquidity bots)
+        if not is_liquidity_bot:
+            self._add_order_to_trader_mapping(order, avg_price if avg_price > 0 else order.price)
+
         # Handle the remaining quantities (if any)
         if quantity == initial_quantity:
             # Nothing matched
             self.add_order(order)
             # Add to user's unfulfilled trades
             self._get_user_state(order.user_id).add_unfulfilled_trade(order)
-            return OrderStatus.OPEN, initial_quantity
+            return OrderStatus.OPEN, initial_quantity, 0.0
         elif quantity > 0:
             # Partially matched
             order.quantity = quantity
             self.add_order(order)
             # Add to user's unfulfilled trades
             self._get_user_state(order.user_id).add_unfulfilled_trade(order)
-            return OrderStatus.PARTIALLY_FILLED, quantity
+            return OrderStatus.PARTIALLY_FILLED, quantity, avg_price
         else:
             # Fully matched
             self.fulfilled_orders.add(order.id)
-            return OrderStatus.FILLED, 0
+            return OrderStatus.FILLED, 0, avg_price
