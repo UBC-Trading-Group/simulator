@@ -60,6 +60,7 @@ function SettingsPage() {
         </div>
         <nav className="dash-nav">
           <button className={isActive("/trades") ? "active" : ""} onClick={() => navigate("/trades")}>Dashboard</button>
+          <button className={isActive("/trade") ? "active" : ""} onClick={() => navigate("/trade")}>Buy / Sell</button>
           <button className={isActive("/portfolio") ? "active" : ""} onClick={() => navigate("/portfolio")}>Portfolio</button>
           <button className={isActive("/transactions") ? "active" : ""} onClick={() => navigate("/transactions")}>Transactions</button>
           <button className={isActive("/orderbook") ? "active" : ""} onClick={() => navigate("/orderbook")}>Order Book</button>
@@ -96,7 +97,7 @@ function SettingsPage() {
               <h3 className="settings-section-title">Personal Information</h3>
               {error && <p className="settings-error">{error}</p>}
               <div className="settings-grid">
-              <div className="settings-field">
+                <div className="settings-field">
                   <label>First Name</label>
                   <input type="text" value={profile?.first_name ?? ""} readOnly placeholder="First name" />
                 </div>

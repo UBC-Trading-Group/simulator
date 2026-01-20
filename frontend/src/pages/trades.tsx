@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PriceChart from "../components/widgets/chart";
+import BuySellWidget from "../components/widgets/BuySellWidget";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiBaseUrl } from "../config/api";
 import { useNews } from "../hooks/useNews";
@@ -139,6 +140,7 @@ function TradesPage() {
         </div>
         <nav className="dash-nav">
           <button className={isActive("/trades") ? "active" : ""} onClick={() => navigate("/trades")}>Dashboard</button>
+          <button className={isActive("/trade") ? "active" : ""} onClick={() => navigate("/trade")}>Buy / Sell</button>
           <button className={isActive("/portfolio") ? "active" : ""} onClick={() => navigate("/portfolio")}>Portfolio</button>
           <button className={isActive("/transactions") ? "active" : ""} onClick={() => navigate("/transactions")}>Transactions</button>
           <button className={isActive("/orderbook") ? "active" : ""} onClick={() => navigate("/orderbook")}>Order Book</button>
@@ -279,6 +281,7 @@ function TradesPage() {
               )}
             </section>
 
+            <BuySellWidget />
             <section className="dash-card">
             <div className="card-head">
               <h3>Recent News</h3>

@@ -24,7 +24,7 @@ function HomePage() {
             </p>
           </div>
         </div>
-        
+
         {/* <div>
           <PriceTicker />
         </div> */}
