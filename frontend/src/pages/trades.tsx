@@ -112,7 +112,7 @@ function TradesPage() {
         if (!response.ok) return;
         const data = await response.json();
         setPortfolio(data);
-        
+
         // Update metrics from backend response
         setRealizedPnL(data.realized_pnl ?? 0);
         setCashFlow(data.cash ?? 0);
@@ -227,7 +227,7 @@ function TradesPage() {
           </div>
         </section>
 
-        <div style={{ 
+        <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '16px',
@@ -236,7 +236,7 @@ function TradesPage() {
           {widgets.map((widget) => {
             // Define size based on widget type
             const getWidgetStyle = (type: WidgetKey) => {
-              switch(type) {
+              switch (type) {
                 case "chart":
                   return { gridColumn: "span 3", minHeight: "400px" };
                 case "buySell":
@@ -251,7 +251,7 @@ function TradesPage() {
                   return { gridColumn: "span 1", minHeight: "300px" };
               }
             };
-            
+
             const widgetStyle = getWidgetStyle(widget.type);
 
             if (widget.type === "chart") {
@@ -278,57 +278,57 @@ function TradesPage() {
                       <button className="widget-close" onClick={() => removeWidget(widget.id)}>×</button>
                     </div>
                   </div>
-                {isAuthenticated ? (
-                  <div className="orders-table">
-                    <div className="orders-header" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr' }}>
-                      <span>Symbol</span>
-                      <span>Side</span>
-                      <span className="text-right">Shares</span>
-                      <span className="text-right">Price</span>
-                      <span className="text-right">Status</span>
-                    </div>
-                    {ordersError && (
-                      <div className="orders-row" style={{ borderBottom: "none", color: "#b91c1c" }}>
-                        {ordersError}
+                  {isAuthenticated ? (
+                    <div className="orders-table">
+                      <div className="orders-header" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr' }}>
+                        <span>Symbol</span>
+                        <span>Side</span>
+                        <span className="text-right">Shares</span>
+                        <span className="text-right">Price</span>
+                        <span className="text-right">Status</span>
                       </div>
-                    )}
-                    {!ordersError && orders.length === 0 && (
-                      <div className="orders-row" style={{ borderBottom: "none" }}>No orders yet.</div>
-                    )}
-                    {!ordersError && orders.length > 0 && orders.slice(0, 10).map((order) => {
-                      const statusStyle = {
-                        filled: { color: '#10b981', fontWeight: 600 },
-                        partially_filled: { color: '#f59e0b', fontWeight: 600 },
-                        open: { color: '#6b7280', fontWeight: 400 },
-                      }[order.status || 'open'] || {};
-                      
-                      return (
-                        <div className="orders-row" key={order.order_id} style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
-                          gap: '8px',
-                          padding: '12px 16px'
-                        }}>
-                          <div className="order-ticker" style={{ fontWeight: 600 }}>{order.symbol}</div>
-                          <div style={{ textTransform: "uppercase", fontSize: '12px', color: order.type === 'buy' ? '#10b981' : '#ef4444' }}>
-                            {order.type}
-                          </div>
-                          <div className="text-right">
-                            {order.filled_quantity && order.filled_quantity < order.quantity 
-                              ? `${order.filled_quantity}/${order.quantity}`
-                              : order.quantity}
-                          </div>
-                          <div className="text-right">${order.price?.toFixed(2) || "--"}</div>
-                          <div className="text-right" style={statusStyle}>
-                            {order.status?.replace('_', ' ') || 'open'}
-                          </div>
+                      {ordersError && (
+                        <div className="orders-row" style={{ borderBottom: "none", color: "#b91c1c" }}>
+                          {ordersError}
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view recent orders.</div>
-                )}
+                      )}
+                      {!ordersError && orders.length === 0 && (
+                        <div className="orders-row" style={{ borderBottom: "none" }}>No orders yet.</div>
+                      )}
+                      {!ordersError && orders.length > 0 && orders.slice(0, 10).map((order) => {
+                        const statusStyle = {
+                          filled: { color: '#10b981', fontWeight: 600 },
+                          partially_filled: { color: '#f59e0b', fontWeight: 600 },
+                          open: { color: '#6b7280', fontWeight: 400 },
+                        }[order.status || 'open'] || {};
+
+                        return (
+                          <div className="orders-row" key={order.order_id} style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
+                            gap: '8px',
+                            padding: '12px 16px'
+                          }}>
+                            <div className="order-ticker" style={{ fontWeight: 600 }}>{order.symbol}</div>
+                            <div style={{ textTransform: "uppercase", fontSize: '12px', color: order.type === 'buy' ? '#10b981' : '#ef4444' }}>
+                              {order.type}
+                            </div>
+                            <div className="text-right">
+                              {order.filled_quantity && order.filled_quantity < order.quantity
+                                ? `${order.filled_quantity}/${order.quantity}`
+                                : order.quantity}
+                            </div>
+                            <div className="text-right">${order.price?.toFixed(2) || "--"}</div>
+                            <div className="text-right" style={statusStyle}>
+                              {order.status?.replace('_', ' ') || 'open'}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view recent orders.</div>
+                  )}
                 </section>
               );
             }
@@ -374,58 +374,58 @@ function TradesPage() {
                       <button className="widget-close" onClick={() => removeWidget(widget.id)}>×</button>
                     </div>
                   </div>
-                {isAuthenticated ? (
-                  <div className="portfolio-list">
-                    {portfolioRows.length === 0 ? (
-                      <div className="orders-row" style={{ borderBottom: "none" }}>No positions yet.</div>
-                    ) : (
-                      <>
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: '1fr 1fr 1fr 1fr', 
-                          gap: '8px',
-                          padding: '8px 16px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          color: '#6b7280',
-                          textTransform: 'uppercase',
-                          borderBottom: '2px solid #e5e7eb'
-                        }}>
-                          <div>Symbol</div>
-                          <div>Shares</div>
-                          <div>P&L</div>
-                          <div style={{ textAlign: 'right' }}>Value</div>
-                        </div>
-                        {portfolioRows.map((item) => {
-                        const changePositive = item.pnl >= 0;
-                        return (
-                          <div className="portfolio-row" key={item.symbol} style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: '1fr 1fr 1fr 1fr', 
+                  {isAuthenticated ? (
+                    <div className="portfolio-list">
+                      {portfolioRows.length === 0 ? (
+                        <div className="orders-row" style={{ borderBottom: "none" }}>No positions yet.</div>
+                      ) : (
+                        <>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr',
                             gap: '8px',
-                            alignItems: 'center',
-                            padding: '12px 16px',
-                            borderBottom: '1px solid #e5e7eb'
+                            padding: '8px 16px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: '#6b7280',
+                            textTransform: 'uppercase',
+                            borderBottom: '2px solid #e5e7eb'
                           }}>
-                            <div className="portfolio-ticker" style={{ fontWeight: 600 }}>{item.symbol}</div>
-                            <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                              {item.quantity} shares
-                            </div>
-                            <div className={`portfolio-change ${changePositive ? "pos" : "neg"}`}>
-                              {`${changePositive ? "+" : ""}$${item.pnl.toFixed(2)}`}
-                            </div>
-                            <div className="portfolio-balance" style={{ textAlign: 'right' }}>
-                              ${item.total_position.toFixed(2)}
-                            </div>
+                            <div>Symbol</div>
+                            <div>Shares</div>
+                            <div>P&L</div>
+                            <div style={{ textAlign: 'right' }}>Value</div>
                           </div>
-                        );
-                        })}
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
-                )}
+                          {portfolioRows.map((item) => {
+                            const changePositive = item.pnl >= 0;
+                            return (
+                              <div className="portfolio-row" key={item.symbol} style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                                gap: '8px',
+                                alignItems: 'center',
+                                padding: '12px 16px',
+                                borderBottom: '1px solid #e5e7eb'
+                              }}>
+                                <div className="portfolio-ticker" style={{ fontWeight: 600 }}>{item.symbol}</div>
+                                <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                                  {item.quantity} shares
+                                </div>
+                                <div className={`portfolio-change ${changePositive ? "pos" : "neg"}`}>
+                                  {`${changePositive ? "+" : ""}$${item.pnl.toFixed(2)}`}
+                                </div>
+                                <div className="portfolio-balance" style={{ textAlign: 'right' }}>
+                                  ${item.total_position.toFixed(2)}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
+                  )}
                 </section>
               );
             }
@@ -451,19 +451,19 @@ function TradesPage() {
                       <button className="widget-close" onClick={() => removeWidget(widget.id)}>×</button>
                     </div>
                   </div>
-                {newsLoading && <div className="orders-row" style={{ borderBottom: "none" }}>Loading news…</div>}
-                {!newsLoading && activeNews.length === 0 && (
-                  <div className="orders-row" style={{ borderBottom: "none" }}>No active news.</div>
-                )}
-                {!newsLoading && activeNews.length > 0 && (
-                  <div className="news-widget-list">
-                    {activeNews.slice(0, 4).map((item) => (
-                      <div className="news-widget-item" key={item.id}>
-                        <div className="news-widget-headline">{item.headline}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  {newsLoading && <div className="orders-row" style={{ borderBottom: "none" }}>Loading news…</div>}
+                  {!newsLoading && activeNews.length === 0 && (
+                    <div className="orders-row" style={{ borderBottom: "none" }}>No active news.</div>
+                  )}
+                  {!newsLoading && activeNews.length > 0 && (
+                    <div className="news-widget-list">
+                      {activeNews.slice(0, 4).map((item) => (
+                        <div className="news-widget-item" key={item.id}>
+                          <div className="news-widget-headline">{item.headline}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
               );
             }

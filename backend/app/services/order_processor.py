@@ -13,9 +13,9 @@ class OrderProcessor:
             return order
         return OrderModel(**order)
 
-    def process_order(self, order):
+    def process_order(self, order, validation_price=None):
         import time
-        
+
         order: OrderModel = self._ensure_model(order)
         instrument_manager = get_instrument_manager()
 
@@ -24,16 +24,16 @@ class OrderProcessor:
                 "status": "INVALID_INSTRUMENT",
                 "message": "Invalid instrument",
             }
-        
+
         # Anti-manipulation checks
         MAX_POSITION = 5000
         MAX_ORDER_SIZE = 500  # Maximum shares per single order
         MAX_VOLUME_PER_MINUTE = 1000  # Maximum shares per ticker per minute
-        
+
         user_state = self.order_book._get_user_state(order.user_id)
         current_position = user_state.get_position(order.ticker)
         current_time = time.time()
-        
+
         # 1. Check single order size limit
         if order.quantity > MAX_ORDER_SIZE:
             return {
@@ -41,7 +41,7 @@ class OrderProcessor:
                 "message": f"Order size exceeds maximum of {MAX_ORDER_SIZE} shares per order",
                 "unprocessed_quantity": order.quantity,
             }
-        
+
         # 2. Check volume rate limit (per minute)
         recent_volume = user_state.get_recent_volume(order.ticker, 60, current_time)
         if recent_volume + order.quantity > MAX_VOLUME_PER_MINUTE:
@@ -50,31 +50,36 @@ class OrderProcessor:
                 "message": f"Trading volume limit exceeded. Max {MAX_VOLUME_PER_MINUTE} shares per minute per ticker. Current: {recent_volume}",
                 "unprocessed_quantity": order.quantity,
             }
-        
+
         # 3. Check for rapid position reversals (pump & dump detection)
-        if user_state.check_reversal_risk(order.ticker, order.side.value, current_time, lookback_seconds=30):
+        if user_state.check_reversal_risk(
+            order.ticker, order.side.value, current_time, lookback_seconds=30
+        ):
             return {
                 "status": "REVERSAL_BLOCKED",
                 "message": "Cannot reverse large position within 30 seconds. Wait before changing direction.",
                 "unprocessed_quantity": order.quantity,
             }
-        
+
         # 4. Check cash requirements for buy orders
         if order.side.value == "buy":
-            required_cash = order.price * order.quantity
+            check_price = (
+                validation_price if validation_price is not None else order.price
+            )
+            required_cash = check_price * order.quantity
             if not user_state.has_sufficient_cash(required_cash):
                 return {
                     "status": "INSUFFICIENT_CASH",
                     "message": f"Insufficient cash. Required: ${required_cash:.2f}, Available: ${user_state.get_cash():.2f}",
                     "unprocessed_quantity": order.quantity,
                 }
-        
+
         # 5. Check position limits (5000 per ticker)
         if order.side.value == "buy":
             new_position = current_position + order.quantity
         else:  # sell
             new_position = current_position - order.quantity
-        
+
         if new_position > MAX_POSITION:
             return {
                 "status": "POSITION_LIMIT_EXCEEDED",
@@ -89,16 +94,22 @@ class OrderProcessor:
             }
 
         # Process the order and get actual execution price
-        processing_status, unprocessed_quantity, avg_execution_price = self.order_book.match_order(order)
-        
+        processing_status, unprocessed_quantity, avg_execution_price = (
+            self.order_book.match_order(order)
+        )
+
         # Track this trade for rate limiting
-        user_state.add_trade_to_history(order.ticker, order.quantity, order.side.value, current_time)
+        user_state.add_trade_to_history(
+            order.ticker, order.quantity, order.side.value, current_time
+        )
 
         return {
             "status": processing_status,
             "message": "Order processed successfully",
             "unprocessed_quantity": unprocessed_quantity,
-            "execution_price": avg_execution_price if avg_execution_price > 0 else order.price,
+            "execution_price": (
+                avg_execution_price if avg_execution_price > 0 else order.price
+            ),
         }
 
     def cancel_order(self, order):

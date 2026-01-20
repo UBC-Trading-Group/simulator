@@ -24,7 +24,7 @@ class UserState:
         self.prev_avg_price = 0
         self.total_realized_pnl = 0.0
         self.rank = 0
-        
+
         # Anti-manipulation limits
         self.trade_history = []  # List of (ticker, quantity, side, timestamp)
 
@@ -46,14 +46,16 @@ class UserState:
                 buy_qty = order["quantity"]
                 buy_price = order["price"]
                 lots = self.portfolio[order["ticker"]]
-                
+
                 while buy_qty > 0 and lots and lots[0][0] < 0:  # Negative qty = short
                     short_qty, short_price = lots[0]
                     short_qty = abs(short_qty)  # Make positive for calculation
-                    
+
                     if buy_qty >= short_qty:
                         # Close entire short position
-                        pnl = (short_price - buy_price) * short_qty  # Profit if buy < short
+                        pnl = (
+                            short_price - buy_price
+                        ) * short_qty  # Profit if buy < short
                         self.total_realized_pnl += pnl
                         buy_qty -= short_qty
                         lots.pop(0)
@@ -64,14 +66,16 @@ class UserState:
                         lots[0] = (-(short_qty - buy_qty), short_price)  # Keep negative
                         buy_qty = 0
                         break
-                
+
                 # If still have buy quantity left, add as long position
                 if buy_qty > 0:
                     self.portfolio[order["ticker"]].append((buy_qty, buy_price))
             else:
                 # No positions, just add long
-                self.portfolio[order["ticker"]].append((order["quantity"], order["price"]))
-                
+                self.portfolio[order["ticker"]].append(
+                    (order["quantity"], order["price"])
+                )
+
         elif order["side"] == "sell":
             self.sell_shares(order["ticker"], order["quantity"], order["price"])
 
@@ -87,12 +91,12 @@ class UserState:
         i = 0
         while remaining > 0 and i < len(lots):
             buy_qty, buy_price = lots[i]
-            
+
             # Skip short positions (negative quantities) and continue to next lot
             if buy_qty <= 0:
                 i += 1
                 continue
-            
+
             if remaining >= buy_qty:
                 # Close entire long position
                 realized_pnl += (sell_price - buy_price) * buy_qty
@@ -137,7 +141,7 @@ class UserState:
 
     def get_rank(self):
         return self.rank
-    
+
     def get_position(self, ticker: str) -> int:
         """
         Get current position (net quantity) for a ticker.
@@ -145,7 +149,7 @@ class UserState:
         Calculated from all fulfilled trades (buys minus sells).
         """
         net_position = 0
-        
+
         # Sum all fulfilled trades for this ticker
         for trade in self.fulfilled_trades:
             if trade["ticker"] == ticker:
@@ -153,58 +157,66 @@ class UserState:
                     net_position += trade["quantity"]
                 else:  # sell
                     net_position -= trade["quantity"]
-        
+
         return net_position
-    
-    def add_trade_to_history(self, ticker: str, quantity: int, side: str, timestamp: float):
+
+    def add_trade_to_history(
+        self, ticker: str, quantity: int, side: str, timestamp: float
+    ):
         """Track trades for rate limiting"""
         self.trade_history.append((ticker, quantity, side, timestamp))
-    
-    def get_recent_volume(self, ticker: str, time_window_seconds: float, current_time: float) -> int:
+
+    def get_recent_volume(
+        self, ticker: str, time_window_seconds: float, current_time: float
+    ) -> int:
         """
         Get total volume traded for a ticker within a time window.
         Used for rate limiting.
         """
         cutoff_time = current_time - time_window_seconds
         volume = sum(
-            qty for t, qty, side, ts in self.trade_history
+            qty
+            for t, qty, side, ts in self.trade_history
             if t == ticker and ts >= cutoff_time
         )
         return volume
-    
-    def check_reversal_risk(self, ticker: str, side: str, current_time: float, lookback_seconds: float = 60) -> bool:
+
+    def check_reversal_risk(
+        self, ticker: str, side: str, current_time: float, lookback_seconds: float = 60
+    ) -> bool:
         """
         Check if user is trying to reverse position too quickly (pump & dump detection).
         Returns True if this looks like a reversal (suspicious).
         """
         cutoff_time = current_time - lookback_seconds
         recent_trades = [
-            (qty, s) for t, qty, s, ts in self.trade_history
+            (qty, s)
+            for t, qty, s, ts in self.trade_history
             if t == ticker and ts >= cutoff_time
         ]
-        
+
         if not recent_trades:
             return False
-        
+
         # Check if the last trade was the opposite side
         last_qty, last_side = recent_trades[-1]
-        
+
         # Suspicious if:
         # - Last trade was a large buy (>100) and now trying to sell
         # - Last trade was a large sell (>100) and now trying to buy
         if last_side != side and last_qty >= 100:
             return True
-        
+
         return False
-    
+
     def has_sufficient_cash(self, required_amount: float) -> bool:
         """Check if user has enough cash for a purchase"""
         return self.cash >= required_amount
-    
+
     def get_cash(self) -> float:
         """Get current cash balance"""
         return self.cash
-    
+
     def calculate_unrealized_pnl(self, current_prices: dict) -> float:
         """
         Calculate unrealized P&L based on current market prices.
@@ -212,11 +224,11 @@ class UserState:
         Handles both long positions (positive qty) and short positions (negative qty).
         """
         unrealized_pnl = 0.0
-        
+
         for ticker, lots in self.portfolio.items():
             if ticker not in current_prices:
                 continue
-            
+
             current_price = current_prices[ticker]
             for qty, entry_price in lots:
                 if qty > 0:
@@ -225,9 +237,9 @@ class UserState:
                 else:
                     # Short position (qty is negative): profit when price goes down
                     unrealized_pnl += (entry_price - current_price) * abs(qty)
-        
+
         return unrealized_pnl
-    
+
     def get_portfolio_market_value(self, current_prices: dict) -> float:
         """
         Calculate total market value of portfolio.
@@ -236,11 +248,11 @@ class UserState:
         current_prices: dict of {ticker: current_price}
         """
         market_value = 0.0
-        
+
         for ticker, lots in self.portfolio.items():
             if ticker not in current_prices:
                 continue
-            
+
             current_price = current_prices[ticker]
             for qty, entry_price in lots:
                 if qty > 0:
@@ -248,6 +260,8 @@ class UserState:
                     market_value += current_price * qty
                 else:
                     # Short: value is negative (liability to buy back)
-                    market_value += current_price * qty  # qty is negative, so this subtracts
-        
+                    market_value += (
+                        current_price * qty
+                    )  # qty is negative, so this subtracts
+
         return market_value
