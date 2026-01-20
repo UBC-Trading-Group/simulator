@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import PriceChart from "../components/widgets/chart";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiBaseUrl } from "../config/api";
+import { useNews } from "../hooks/useNews";
 
 const leaderboard = [
   { name: "Team Cup", change: "+$435.00", positive: true },
@@ -42,6 +43,7 @@ function TradesPage() {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const { token, isAuthenticated } = useAuth();
+    const { news } = useNews();
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [realizedPnL, setRealizedPnL] = useState<number | null>(null);
   const [volumeTraded, setVolumeTraded] = useState<number | null>(null);
@@ -276,6 +278,49 @@ function TradesPage() {
                 <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
               )}
             </section>
+
+            <section className="dash-card">
+            <div className="card-head">
+              <h3>Recent News</h3>
+              <button className="link-button">View All</button>
+            </div>
+            {isAuthenticated ? (
+              <>
+                <div className="flex gap-2 mb-6">
+                  {["All", "My Stocks", "Market"].map((label:string) => <>
+                    <button className="px-2 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs font-medium">
+                        {label}
+                    </button>
+                    </>)}
+                </div>
+
+                <div className="space-y-0">
+                  {news.map((n)=> (
+                    <div className="relative pl-4 py-1 mb-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                      <div className="absolute left-0 top-0 w-1 h-full bg-green-500 rounded-full"></div>
+                      <div className="flex gap-4">
+                          <div className="flex-1 min-w-0">
+                              <h3 className="text-xs font-semibold text-gray-800 mb-2 leading-tight">
+                                  NOVA shares surge 12% on strong quarterly earnings report
+                              </h3>
+                              <div className="flex items-center gap-2 mb-1">
+                                  <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
+                                      {n.id}
+                                  </span>
+                              </div>
+                            <p className="text-xs text-gray-500">{n.ts_release_ms}</p>
+                        </div>
+                    </div>
+                </div>
+                  ))}
+              </div>
+            </>
+            ) : (
+                <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your news.</div>
+            )}
+
+             
+          </section>
           </div>
         </div>
       </div>
