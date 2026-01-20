@@ -1,23 +1,28 @@
 export const palette = {
   primaryText: '#1B212D',
   secondaryText: '#98A1B4',
+  brandRed: '#892736',
+  brandRedHover: '#72202d',
   marketBuy: '#10B981',
+  marketBuyHover: '#059669',
   marketSell: '#EF4444',
+  marketSellHover: '#DC2626',
   limitBuy: '#3B82F6',
+  limitBuyHover: '#2563EB',
   border: '#E7E9F1',
   background: '#FFFFFF',
-  cardShadow: '0 25px 45px rgba(30, 33, 50, 0.08)',
+  cardShadow: '0 8px 24px rgba(0,0,0,0.04)',
 };
 
 export const widgetStyles = {
   card: {
     width: '100%',
     maxWidth: 420,
-    border: `1px solid ${palette.border}`,
+    border: 'none',
     background: palette.background,
     boxShadow: palette.cardShadow,
-    padding: '28px 28px 32px',
-    borderRadius: 18,
+    padding: '20px',
+    borderRadius: 12,
   } as React.CSSProperties,
 
   headerRow: {
@@ -117,35 +122,41 @@ export const widgetStyles = {
     gap: 12,
   } as React.CSSProperties,
 
-  pillButton: (type: 'buy' | 'sell') => ({
+  pillButton: (type: 'buy' | 'sell', isHovered?: boolean) => ({
     flex: 1,
-    padding: '14px 20px',
-    fontSize: 14,
+    padding: '12px 20px',
+    fontSize: 13,
     fontWeight: 700,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: '#FFFFFF',
-    background: type === 'buy' ? palette.marketBuy : palette.marketSell,
+    background: type === 'buy'
+      ? (isHovered ? palette.marketBuyHover : palette.marketBuy)
+      : (isHovered ? palette.marketSellHover : palette.marketSell),
     border: 'none',
     borderRadius: 10,
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    transform: isHovered ? 'translateY(-1px)' : 'none',
+    boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
   } as React.CSSProperties),
 
-  limitButton: {
+  limitButton: (isHovered?: boolean) => ({
     width: '100%',
-    padding: '14px 20px',
-    fontSize: 14,
+    padding: '12px 20px',
+    fontSize: 13,
     fontWeight: 700,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: '#FFFFFF',
-    background: palette.limitBuy,
+    background: isHovered ? palette.brandRedHover : palette.brandRed,
     border: 'none',
     borderRadius: 10,
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    transform: isHovered ? 'translateY(-1px)' : 'none',
+    boxShadow: isHovered ? '0 4px 12px rgba(137, 39, 54, 0.2)' : 'none',
+  } as React.CSSProperties),
 
   divider: {
     height: 1,
@@ -158,4 +169,3 @@ export const focusStyles: React.CSSProperties = {
   borderColor: '#3B82F6',
   background: '#FFFFFF',
 };
-

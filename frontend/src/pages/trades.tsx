@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import PriceChart from "../components/widgets/chart";
+import BuySellWidget from "../components/widgets/BuySellWidget";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiBaseUrl } from "../config/api";
 import { useNews } from "../hooks/useNews";
@@ -45,6 +46,7 @@ function TradesPage() {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const { token, isAuthenticated } = useAuth();
+    const { news } = useNews();
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [realizedPnL, setRealizedPnL] = useState<number | null>(null);
   const [volumeTraded, setVolumeTraded] = useState<number | null>(null);
@@ -153,6 +155,7 @@ function TradesPage() {
         </div>
         <nav className="dash-nav">
           <button className={isActive("/trades") ? "active" : ""} onClick={() => navigate("/trades")}>Dashboard</button>
+          <button className={isActive("/trade") ? "active" : ""} onClick={() => navigate("/trade")}>Buy / Sell</button>
           <button className={isActive("/portfolio") ? "active" : ""} onClick={() => navigate("/portfolio")}>Portfolio</button>
           <button className={isActive("/transactions") ? "active" : ""} onClick={() => navigate("/transactions")}>Transactions</button>
           <button className={isActive("/orderbook") ? "active" : ""} onClick={() => navigate("/orderbook")}>Order Book</button>
