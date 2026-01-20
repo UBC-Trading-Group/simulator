@@ -25,10 +25,10 @@ class GBMManager:
                     drift = 0.0
                     if self.news_engine:
                         drift = self.news_engine.get_instrument_drift(ticker)
-                    
+
                     # Update the GBM with news drift
                     gbm_instance.set_drift(drift)
-                    
+
                     # This updates the current_price field of the gbm_instance
                     gbm_instance()
                 await asyncio.sleep(1)

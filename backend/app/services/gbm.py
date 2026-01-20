@@ -15,7 +15,7 @@ class GeometricBrownianMotionAssetSimulator:
         self.additional_drift = 0.0  # News-based drift
 
         # TODO: store previous prices
-    
+
     def set_drift(self, drift: float):
         """Set additional drift from news events"""
         self.additional_drift = drift

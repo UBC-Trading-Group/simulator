@@ -77,7 +77,7 @@ def create_order(
         # Market order: use aggressive pricing to sweep through all available liquidity
         best_bid = order_book.best_bid(order_data.symbol)
         best_ask = order_book.best_ask(order_data.symbol)
-        
+
         if order_data.side == OrderSide.BUY:
             # Match price for buy: use a very high price to sweep through all available liquidity
             if not best_ask:
@@ -108,10 +108,15 @@ def create_order(
         user_id=str(current_user.id),
     )
 
-    # Process the order - Note: we might want to pass validation_price to the processor 
+    # Process the order - Note: we might want to pass validation_price to the processor
     # instead of it calculating based on order.price for Buy orders.
     # Let's adjust process_order to handle this.
-    result = order_processor.process_order(order, validation_price=validation_price if order_data.order_type == OrderType.MARKET else None)
+    result = order_processor.process_order(
+        order,
+        validation_price=(
+            validation_price if order_data.order_type == OrderType.MARKET else None
+        ),
+    )
 
     # Handle status - it could be OrderStatus enum or string
     status_value = result["status"]
@@ -119,7 +124,7 @@ def create_order(
         status_str = status_value.value
     else:
         status_str = str(status_value)
-    
+
     # Check for various errors and return appropriate HTTP responses
     error_statuses = [
         "POSITION_LIMIT_EXCEEDED",
@@ -129,7 +134,7 @@ def create_order(
         "REVERSAL_BLOCKED",
         "INSUFFICIENT_CASH",
     ]
-    
+
     if status_str in error_statuses:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -138,7 +143,7 @@ def create_order(
 
     # Use actual execution price if available, otherwise use order price
     execution_price = result.get("execution_price", order_price)
-    
+
     return {
         "order_id": str(order.id),
         "user_id": current_user.id,
