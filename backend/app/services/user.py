@@ -24,6 +24,9 @@ class UserState:
         self.prev_avg_price = 0
         self.total_realized_pnl = 0.0
         self.rank = 0
+        
+        # Anti-manipulation limits
+        self.trade_history = []  # List of (ticker, quantity, side, timestamp)
 
     # adds order that has not been closed
     def add_unfulfilled_trade(self, order):
@@ -97,3 +100,62 @@ class UserState:
 
     def get_rank(self):
         return self.rank
+    
+    def get_position(self, ticker: str) -> int:
+        """
+        Get current position (net quantity) for a ticker.
+        Returns positive for long, negative for short.
+        Calculated from all fulfilled trades (buys minus sells).
+        """
+        net_position = 0
+        
+        # Sum all fulfilled trades for this ticker
+        for trade in self.fulfilled_trades:
+            if trade["ticker"] == ticker:
+                if trade["side"] == "buy":
+                    net_position += trade["quantity"]
+                else:  # sell
+                    net_position -= trade["quantity"]
+        
+        return net_position
+    
+    def add_trade_to_history(self, ticker: str, quantity: int, side: str, timestamp: float):
+        """Track trades for rate limiting"""
+        self.trade_history.append((ticker, quantity, side, timestamp))
+    
+    def get_recent_volume(self, ticker: str, time_window_seconds: float, current_time: float) -> int:
+        """
+        Get total volume traded for a ticker within a time window.
+        Used for rate limiting.
+        """
+        cutoff_time = current_time - time_window_seconds
+        volume = sum(
+            qty for t, qty, side, ts in self.trade_history
+            if t == ticker and ts >= cutoff_time
+        )
+        return volume
+    
+    def check_reversal_risk(self, ticker: str, side: str, current_time: float, lookback_seconds: float = 60) -> bool:
+        """
+        Check if user is trying to reverse position too quickly (pump & dump detection).
+        Returns True if this looks like a reversal (suspicious).
+        """
+        cutoff_time = current_time - lookback_seconds
+        recent_trades = [
+            (qty, s) for t, qty, s, ts in self.trade_history
+            if t == ticker and ts >= cutoff_time
+        ]
+        
+        if not recent_trades:
+            return False
+        
+        # Check if the last trade was the opposite side
+        last_qty, last_side = recent_trades[-1]
+        
+        # Suspicious if:
+        # - Last trade was a large buy (>100) and now trying to sell
+        # - Last trade was a large sell (>100) and now trying to buy
+        if last_side != side and last_qty >= 100:
+            return True
+        
+        return False

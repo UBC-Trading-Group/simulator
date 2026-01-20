@@ -23,13 +23,28 @@ class LiquidityBot:
         self.quote_noise_sigma = random.uniform(0, 0.001)  # small noise
         
         # Random walk parameters for price noise
-        self.price_volatility = 0.0003  # 0.03% volatility per tick for smooth movement
-        self.mean_reversion = 0.985  # strong mean reversion to keep prices stable
+        self.price_volatility = 0.0045  # 0.45% volatility per tick for active movement
+        self.mean_reversion = 0.97  # moderate mean reversion
         self.initial_price = mid_price
+        
+        # Inventory pressure - adjust mid price based on inventory
+        self.inventory_pressure_coeff = 0.0005  # 0.05% price shift per unit of inventory (reduced from 0.2%)
+        
+        # Inventory limits to prevent extreme positions
+        self.max_inventory = 200  # Maximum long position
+        self.min_inventory = -200  # Maximum short position
 
     # TODO: adjust with bid and ask externally
     def adjust_mid_price(self, mid_price):
         self.mid_price = mid_price
+    
+    def update_inventory(self, inventory_change: int):
+        """
+        Update inventory when orders are filled.
+        Positive = bought (inventory increases)
+        Negative = sold (inventory decreases)
+        """
+        self.inventory += inventory_change
     
     def apply_random_walk(self):
         """
@@ -42,8 +57,17 @@ class LiquidityBot:
         # Mean reversion to initial price
         mean_reversion_component = (self.initial_price - self.mid_price) * (1 - self.mean_reversion)
         
+        # Inventory pressure: if inventory is positive (too much bought), lower price
+        # if inventory is negative (too much sold), raise price
+        # Cap inventory effect to prevent extreme price movements
+        capped_inventory = max(-100, min(100, self.inventory))
+        inventory_pressure = -capped_inventory * self.inventory_pressure_coeff * self.initial_price
+        
         # Update mid price
-        self.mid_price = self.mid_price + shock + mean_reversion_component
+        new_price = self.mid_price + shock + mean_reversion_component + inventory_pressure
+        
+        # Ensure price stays positive (minimum 10% of initial price)
+        self.mid_price = max(new_price, self.initial_price * 0.1)
 
     def compute_spread(self, drift_term):
         """
@@ -92,8 +116,13 @@ class LiquidityBot:
             bid_price = round(bid - lvl * spread, 2)
             ask_price = round(ask + lvl * spread, 2)
 
-            bids.append([bid_price, depth])
-            asks.append([ask_price, depth])
+            # Skip bid orders if inventory is too high (too long)
+            if self.inventory < self.max_inventory:
+                bids.append([bid_price, depth])
+            
+            # Skip ask orders if inventory is too low (too short)
+            if self.inventory > self.min_inventory:
+                asks.append([ask_price, depth])
 
         book_snapshot = {
             "type": "book_snapshot",

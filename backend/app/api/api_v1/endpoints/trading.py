@@ -74,14 +74,28 @@ def create_order(
             )
         order_price = order_data.price
     else:
-        # Market order: get current market price
-        market_price = order_book.mid_price(order_data.symbol)
-        if market_price is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unable to get market price for {order_data.symbol}",
-            )
-        order_price = market_price
+        # Market order: use aggressive pricing to sweep through all available liquidity
+        best_bid = order_book.best_bid(order_data.symbol)
+        best_ask = order_book.best_ask(order_data.symbol)
+        
+        if order_data.side == OrderSide.BUY:
+            # For market buy: use a very high price to match all available asks
+            if not best_ask:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"No liquidity available to buy {order_data.symbol}",
+                )
+            # Use ask price * 10 to ensure matching through all depth levels
+            order_price = best_ask.price * 10
+        else:  # SELL
+            # For market sell: use a very low price to match all available bids
+            if not best_bid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"No liquidity available to sell {order_data.symbol}",
+                )
+            # Use bid price * 0.1 to ensure matching through all depth levels
+            order_price = best_bid.price * 0.1
 
     # Create OrderModel
     order = OrderModel(
@@ -101,6 +115,21 @@ def create_order(
         status_str = status_value.value
     else:
         status_str = str(status_value)
+    
+    # Check for various errors and return appropriate HTTP responses
+    error_statuses = [
+        "POSITION_LIMIT_EXCEEDED",
+        "INVALID_INSTRUMENT",
+        "ORDER_SIZE_EXCEEDED",
+        "RATE_LIMIT_EXCEEDED",
+        "REVERSAL_BLOCKED",
+    ]
+    
+    if status_str in error_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result.get("message", "Order rejected"),
+        )
 
     return {
         "order_id": str(order.id),
