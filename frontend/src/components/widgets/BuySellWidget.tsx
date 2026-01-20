@@ -31,6 +31,7 @@ const BuySellWidget: React.FC = () => {
   const [hoverBuy, setHoverBuy] = useState(false);
   const [hoverSell, setHoverSell] = useState(false);
   const [hoverLimit, setHoverLimit] = useState(false);
+  const [limitSide, setLimitSide] = useState<'buy' | 'sell'>('buy');
 
   // Fetch portfolio to prime available tickers list
   useEffect(() => {
@@ -256,7 +257,7 @@ const BuySellWidget: React.FC = () => {
         body: JSON.stringify({
           symbol: selectedTicker,
           quantity: parseInt(quantity, 10),
-          side: 'buy',
+          side: limitSide,
           order_type: 'limit',
           price: parseFloat(limitPrice),
         }),
@@ -269,7 +270,7 @@ const BuySellWidget: React.FC = () => {
 
       const data = await response.json();
       setSuccess(
-        `Limit order placed: ${quantity} ${selectedTicker} @ $${data.price?.toFixed(2) || limitPrice}`
+        `Limit order placed: ${limitSide.toUpperCase()} ${quantity} ${selectedTicker} @ $${data.price?.toFixed(2) || limitPrice}`
       );
     } catch (err) {
       setError(
@@ -444,7 +445,23 @@ const BuySellWidget: React.FC = () => {
 
       {/* Limit order */}
       <section style={widgetStyles.section}>
-        <h3 style={widgetStyles.sectionTitle}>Place Limit Order</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={widgetStyles.sectionTitle}>Limit Order</h3>
+          <div style={widgetStyles.toggleContainer}>
+            <div
+              onClick={() => setLimitSide('buy')}
+              style={widgetStyles.toggleOption(limitSide === 'buy', 'buy')}
+            >
+              Buy
+            </div>
+            <div
+              onClick={() => setLimitSide('sell')}
+              style={widgetStyles.toggleOption(limitSide === 'sell', 'sell')}
+            >
+              Sell
+            </div>
+          </div>
+        </div>
 
         <div style={widgetStyles.fieldGroup}>
           <span style={widgetStyles.label}>Quantity</span>
@@ -506,6 +523,9 @@ const BuySellWidget: React.FC = () => {
           }
           style={{
             ...widgetStyles.limitButton(hoverLimit),
+            background: hoverLimit
+              ? palette.brandRedHover
+              : (limitSide === 'buy' ? palette.marketBuy : palette.marketSell),
             opacity:
               !isValidQuantity(quantity) ||
                 !isValidPrice(limitPrice) ||
@@ -513,9 +533,12 @@ const BuySellWidget: React.FC = () => {
                 !isAuthenticated
                 ? 0.5
                 : 1,
+            boxShadow: hoverLimit
+              ? `0 4px 12px ${limitSide === 'buy' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+              : 'none',
           }}
         >
-          {isSubmitting ? 'Placing Order...' : 'Place Limit Order'}
+          {isSubmitting ? 'Placing Order...' : `Place ${limitSide.toUpperCase()} Limit`}
         </button>
       </section>
     </div>

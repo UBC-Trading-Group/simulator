@@ -79,25 +79,27 @@ def create_order(
         best_ask = order_book.best_ask(order_data.symbol)
         
         if order_data.side == OrderSide.BUY:
-            # For market buy: use a very high price to match all available asks
+            # Match price for buy: use a very high price to sweep through all available liquidity
             if not best_ask:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"No liquidity available to buy {order_data.symbol}",
                 )
-            # Use ask price * 10 to ensure matching through all depth levels
             order_price = best_ask.price * 10
+            # Validation price for buy: use a realistic estimate (mid or ask)
+            validation_price = best_ask.price
         else:  # SELL
-            # For market sell: use a very low price to match all available bids
+            # Match price for sell: use a very low price to match all available bids
             if not best_bid:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"No liquidity available to sell {order_data.symbol}",
                 )
-            # Use bid price * 0.1 to ensure matching through all depth levels
             order_price = best_bid.price * 0.1
+            # Validation price for sell: not strictly needed for cash but good for consistency
+            validation_price = best_bid.price
 
-    # Create OrderModel
+    # Create OrderModel with aggressive match price
     order = OrderModel(
         price=order_price,
         quantity=order_data.quantity,
@@ -106,8 +108,10 @@ def create_order(
         user_id=str(current_user.id),
     )
 
-    # Process the order
-    result = order_processor.process_order(order)
+    # Process the order - Note: we might want to pass validation_price to the processor 
+    # instead of it calculating based on order.price for Buy orders.
+    # Let's adjust process_order to handle this.
+    result = order_processor.process_order(order, validation_price=validation_price if order_data.order_type == OrderType.MARKET else None)
 
     # Handle status - it could be OrderStatus enum or string
     status_value = result["status"]

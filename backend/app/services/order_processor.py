@@ -13,7 +13,7 @@ class OrderProcessor:
             return order
         return OrderModel(**order)
 
-    def process_order(self, order):
+    def process_order(self, order, validation_price=None):
         import time
         
         order: OrderModel = self._ensure_model(order)
@@ -61,7 +61,8 @@ class OrderProcessor:
         
         # 4. Check cash requirements for buy orders
         if order.side.value == "buy":
-            required_cash = order.price * order.quantity
+            check_price = validation_price if validation_price is not None else order.price
+            required_cash = check_price * order.quantity
             if not user_state.has_sufficient_cash(required_cash):
                 return {
                     "status": "INSUFFICIENT_CASH",

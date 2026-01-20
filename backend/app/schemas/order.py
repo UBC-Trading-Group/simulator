@@ -31,6 +31,7 @@ class OrderModel(BaseModel):
 
     id: UUID = Field(default_factory=uuid4)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    execution_price: Optional[float] = Field(None, ge=0)
 
     class Config:
         validate_assignment = True

@@ -145,19 +145,19 @@ class OrderBook:
         if user_id not in self.trader_mapping:
             self.trader_mapping[user_id] = set()
         self.trader_mapping[user_id].add(order.id)
-        # Store a copy with execution price if provided, otherwise original
-        if execution_price and execution_price > 0:
-            order_copy = OrderModel(
-                id=order.id,
-                price=execution_price,
-                quantity=order.quantity,
-                ticker=order.ticker,
-                side=order.side,
-                user_id=order.user_id,
-            )
-            self.all_orders[order.id] = order_copy
-        else:
-            self.all_orders[order.id] = order
+        
+        # Store a copy with current status/price
+        order_copy = OrderModel(
+            id=order.id,
+            price=order.price, # Keep original limit price
+            quantity=order.quantity,
+            ticker=order.ticker,
+            side=order.side,
+            user_id=order.user_id,
+            created_at=order.created_at,
+            execution_price=execution_price
+        )
+        self.all_orders[order.id] = order_copy
 
     def _get_trader_orders(self, user_id: str) -> Set[str]:
         return self.trader_mapping.get(user_id, set())

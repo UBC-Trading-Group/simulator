@@ -163,6 +163,32 @@ export const widgetStyles = {
     background: palette.border,
     margin: '24px 0',
   } as React.CSSProperties,
+
+  toggleContainer: {
+    display: 'flex',
+    background: '#F3F4F6',
+    borderRadius: 8,
+    padding: 4,
+    marginBottom: 4,
+  } as React.CSSProperties,
+
+  toggleOption: (isActive: boolean, side: 'buy' | 'sell') => ({
+    flex: 1,
+    padding: '8px 12px',
+    fontSize: 12,
+    fontWeight: 700,
+    textAlign: 'center',
+    cursor: 'pointer',
+    borderRadius: 6,
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    background: isActive
+      ? (side === 'buy' ? palette.marketBuy : palette.marketSell)
+      : 'transparent',
+    color: isActive ? '#FFFFFF' : palette.secondaryText,
+    boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  } as React.CSSProperties),
 };
 
 export const focusStyles: React.CSSProperties = {
