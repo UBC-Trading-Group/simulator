@@ -27,6 +27,11 @@ const LiveLineChart: React.FC = () => {
       const newHistory: TickHistory = { ...prev };
 
       Object.entries(prices).forEach(([ticker, price]) => {
+        // Skip if price is null or invalid
+        if (price == null || isNaN(price)) {
+          return;
+        }
+
         const prevArr = newHistory[ticker] ?? [];
         const lastTick = prevArr[prevArr.length - 1];
 
@@ -57,7 +62,9 @@ const LiveLineChart: React.FC = () => {
   const seriesList = tickers.map((ticker, index) => ({
     name: ticker,
     type: "line",
-    data: history[ticker].map(p => [p.time, p.price.toFixed(3)]),
+    data: history[ticker]
+      .filter(p => p.price != null && !isNaN(p.price))
+      .map(p => [p.time, parseFloat(p.price.toFixed(3))]),
     smooth: false,
     lineStyle: { color: colors[index % colors.length], width: 2 },
     itemStyle: { color: colors[index % colors.length] },

@@ -13,18 +13,37 @@ class LiquidityBot:
         self.mid_price = mid_price
         self.inventory = inventory
 
-        self.base_spread = 0.1  # per suggestion
+        self.base_spread = 0.005  # 0.5% base spread for realistic bid-ask
         self.stress_coefficient = random.uniform(
-            0.05, 0.15
+            0.001, 0.003
         )  # simulates investors in the market
         self.inventory_coefficient = random.uniform(
-            0.005, 0.05
+            0.0001, 0.001
         )  # how risk-averse the bot is
-        self.quote_noise_sigma = random.uniform(0, 0.05)  # per DC discussion
+        self.quote_noise_sigma = random.uniform(0, 0.001)  # small noise
+        
+        # Random walk parameters for price noise
+        self.price_volatility = 0.0003  # 0.03% volatility per tick for smooth movement
+        self.mean_reversion = 0.985  # strong mean reversion to keep prices stable
+        self.initial_price = mid_price
 
     # TODO: adjust with bid and ask externally
     def adjust_mid_price(self, mid_price):
         self.mid_price = mid_price
+    
+    def apply_random_walk(self):
+        """
+        Apply random walk to mid price to generate noise.
+        This creates realistic price movement without using drift.
+        """
+        # Random shock
+        shock = random.gauss(0, self.price_volatility * self.mid_price)
+        
+        # Mean reversion to initial price
+        mean_reversion_component = (self.initial_price - self.mid_price) * (1 - self.mean_reversion)
+        
+        # Update mid price
+        self.mid_price = self.mid_price + shock + mean_reversion_component
 
     def compute_spread(self, drift_term):
         """
@@ -56,6 +75,10 @@ class LiquidityBot:
         return max(50 - 10 * level, 10)
 
     def generate_order_book(self, drift_term, levels=3):
+        # Apply random walk to create price noise
+        self.apply_random_walk()
+        
+        # Compute spread (drift_term should be 0 for liquidity bots)
         spread = self.compute_spread(drift_term)
 
         # Initial bid and ask at level 0
