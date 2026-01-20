@@ -46,7 +46,7 @@ function TradesPage() {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const { token, isAuthenticated } = useAuth();
-    const { news } = useNews();
+  //const { news } = useNews();
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [realizedPnL, setRealizedPnL] = useState<number | null>(null);
   const [volumeTraded, setVolumeTraded] = useState<number | null>(null);

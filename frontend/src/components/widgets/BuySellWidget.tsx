@@ -202,8 +202,12 @@ const BuySellWidget: React.FC = () => {
       return;
     }
 
-    if (currentPrice === null) {
-      setError('Unable to get current market price. Please try again.');
+    const executionPrice = orderType === 'buy'
+      ? orderBook?.best_ask?.price ?? currentPrice
+      : orderBook?.best_bid?.price ?? currentPrice;
+
+    if (executionPrice === null) {
+      setError('Unable to get execution price. Please try again.');
       return;
     }
 
@@ -222,7 +226,8 @@ const BuySellWidget: React.FC = () => {
           symbol: selectedTicker,
           quantity: parseInt(quantity, 10),
           side: orderType,
-          order_type: 'market',
+          order_type: 'limit', // Use limit order to ensure we execution at specific book price
+          price: executionPrice,
         }),
       });
 
@@ -233,7 +238,7 @@ const BuySellWidget: React.FC = () => {
 
       const data = await response.json();
       setSuccess(
-        `Market order placed: ${orderType.toUpperCase()} ${quantity} ${selectedTicker} @ $${data.price?.toFixed(2) || formatPrice(currentPrice)}`
+        `Market order placed: ${orderType.toUpperCase()} ${quantity} ${selectedTicker} @ $${data.price?.toFixed(2) || formatPrice(executionPrice)}`
       );
     } catch (err) {
       setError(
@@ -389,7 +394,7 @@ const BuySellWidget: React.FC = () => {
               onMouseLeave={() => setHoverBuy(false)}
               onClick={() => submitMarketOrder('buy')}
               disabled={
-                currentPrice === null ||
+                (orderBook?.best_ask?.price ?? currentPrice) === null ||
                 !isValidQuantity(quantity) ||
                 isSubmitting ||
                 !isAuthenticated
@@ -397,7 +402,7 @@ const BuySellWidget: React.FC = () => {
               style={{
                 ...widgetStyles.pillButton('buy', hoverBuy),
                 opacity:
-                  currentPrice === null ||
+                  (orderBook?.best_ask?.price ?? currentPrice) === null ||
                     !isValidQuantity(quantity) ||
                     isSubmitting ||
                     !isAuthenticated
@@ -405,14 +410,14 @@ const BuySellWidget: React.FC = () => {
                     : 1,
               }}
             >
-              BUY @ ${formatPrice(currentPrice)}
+              BUY @ ${formatPrice(orderBook?.best_ask?.price ?? currentPrice)}
             </button>
             <button
               onMouseEnter={() => setHoverSell(true)}
               onMouseLeave={() => setHoverSell(false)}
               onClick={() => submitMarketOrder('sell')}
               disabled={
-                currentPrice === null ||
+                (orderBook?.best_bid?.price ?? currentPrice) === null ||
                 !isValidQuantity(quantity) ||
                 isSubmitting ||
                 !isAuthenticated
@@ -420,7 +425,7 @@ const BuySellWidget: React.FC = () => {
               style={{
                 ...widgetStyles.pillButton('sell', hoverSell),
                 opacity:
-                  currentPrice === null ||
+                  (orderBook?.best_bid?.price ?? currentPrice) === null ||
                     !isValidQuantity(quantity) ||
                     isSubmitting ||
                     !isAuthenticated
@@ -428,7 +433,7 @@ const BuySellWidget: React.FC = () => {
                     : 1,
               }}
             >
-              SELL @ ${formatPrice(currentPrice)}
+              SELL @ ${formatPrice(orderBook?.best_bid?.price ?? currentPrice)}
             </button>
           </div>
         </div>
