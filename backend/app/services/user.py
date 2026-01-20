@@ -83,15 +83,26 @@ class UserState:
         lots = self.portfolio[ticker]
 
         # Close long positions first (FIFO)
-        while remaining > 0 and lots:
-            buy_qty, buy_price = lots[0]
+        # Only process positive quantities (long positions)
+        i = 0
+        while remaining > 0 and i < len(lots):
+            buy_qty, buy_price = lots[i]
+            
+            # Skip short positions (negative quantities) and continue to next lot
+            if buy_qty <= 0:
+                i += 1
+                continue
+            
             if remaining >= buy_qty:
+                # Close entire long position
                 realized_pnl += (sell_price - buy_price) * buy_qty
                 remaining -= buy_qty
-                lots.pop(0)
+                lots.pop(i)
+                # Don't increment i, as we removed an element
             else:
+                # Partially close long position
                 realized_pnl += (sell_price - buy_price) * remaining
-                lots[0] = (buy_qty - remaining, buy_price)
+                lots[i] = (buy_qty - remaining, buy_price)
                 remaining = 0
                 break
 

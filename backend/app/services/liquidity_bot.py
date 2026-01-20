@@ -28,7 +28,7 @@ class LiquidityBot:
         self.initial_price = mid_price
         
         # Inventory pressure - adjust mid price based on inventory
-        self.inventory_pressure_coeff = 0.0005  # 0.05% price shift per unit of inventory (reduced from 0.2%)
+        self.inventory_pressure_coeff = 0.002  # 0.2% price shift per unit of inventory for faster reaction
         
         # Inventory limits to prevent extreme positions
         self.max_inventory = 200  # Maximum long position
@@ -46,28 +46,21 @@ class LiquidityBot:
         """
         self.inventory += inventory_change
     
-    def apply_random_walk(self):
+    def apply_inventory_pressure(self):
         """
-        Apply random walk to mid price to generate noise.
-        This creates realistic price movement without using drift.
+        Adjust mid price based on inventory to respond to order flow.
+        If inventory is positive (bought a lot), lower price to incentivize selling.
+        If inventory is negative (sold a lot), raise price to incentivize buying.
         """
-        # Random shock
-        shock = random.gauss(0, self.price_volatility * self.mid_price)
-        
-        # Mean reversion to initial price
-        mean_reversion_component = (self.initial_price - self.mid_price) * (1 - self.mean_reversion)
-        
-        # Inventory pressure: if inventory is positive (too much bought), lower price
-        # if inventory is negative (too much sold), raise price
         # Cap inventory effect to prevent extreme price movements
         capped_inventory = max(-100, min(100, self.inventory))
-        inventory_pressure = -capped_inventory * self.inventory_pressure_coeff * self.initial_price
+        inventory_pressure = -capped_inventory * self.inventory_pressure_coeff * self.mid_price
         
-        # Update mid price
-        new_price = self.mid_price + shock + mean_reversion_component + inventory_pressure
+        # Apply pressure to mid price
+        self.mid_price += inventory_pressure
         
         # Ensure price stays positive (minimum 10% of initial price)
-        self.mid_price = max(new_price, self.initial_price * 0.1)
+        self.mid_price = max(self.mid_price, self.initial_price * 0.1)
 
     def compute_spread(self, drift_term):
         """
@@ -99,8 +92,9 @@ class LiquidityBot:
         return max(50 - 10 * level, 10)
 
     def generate_order_book(self, drift_term, levels=3):
-        # Note: mid_price is now updated externally from GBM (which includes news drift)
-        # Random walk is removed to prevent double-counting price movement
+        # Note: mid_price is updated externally from GBM (which includes news drift)
+        # Then we apply inventory pressure to respond to order flow
+        self.apply_inventory_pressure()
         
         # Compute spread (drift_term should be 0 for liquidity bots)
         spread = self.compute_spread(drift_term)

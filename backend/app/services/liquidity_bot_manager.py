@@ -130,11 +130,11 @@ class LiquidityBotManager:
                     print("Liquidity bot generated snapshot for", ticker)
                     print(book_snapshot)
                     self.process_book_snapshot(book_snapshot)
-                # Update every 0.75 seconds for active price movement
-                await asyncio.sleep(0.75)
+                # Update every 0.5 seconds for fast price reaction to trades
+                await asyncio.sleep(0.5)
             except asyncio.CancelledError:
                 self.is_running = False
                 break
             except Exception as e:
                 print(f"Error in liquidity bot manager: {e}")
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(0.5)
