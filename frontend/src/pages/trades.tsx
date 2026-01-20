@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PriceChart from "../components/widgets/chart";
 import BuySellWidget from "../components/widgets/BuySellWidget";
 import { useAuth } from "../contexts/AuthContext";
@@ -34,10 +34,12 @@ interface Order {
   symbol: string;
   quantity: number;
   type: string;
-  status: string;
   price?: number;
   created_at?: string;
 }
+
+type WidgetKey = "chart" | "recentOrders" | "leaderboard" | "portfolio" | "news";
+const ALL_WIDGETS: WidgetKey[] = ["chart", "recentOrders", "leaderboard", "portfolio", "news"];
 
 function TradesPage() {
   const navigate = useNavigate();
@@ -51,6 +53,19 @@ function TradesPage() {
   const [currentPositions, setCurrentPositions] = useState<number | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [widgetPickerOpen, setWidgetPickerOpen] = useState(false);
+  const [visibleWidgets, setVisibleWidgets] = useState<WidgetKey[]>([...ALL_WIDGETS]);
+  const { news, isLoading: newsLoading } = useNews();
+
+  const availableToAdd = useMemo(
+    () => ALL_WIDGETS.filter((w) => !visibleWidgets.includes(w)),
+    [visibleWidgets]
+  );
+
+  const hideWidget = (key: WidgetKey) =>
+    setVisibleWidgets((prev) => prev.filter((w) => w !== key));
+  const showWidget = (key: WidgetKey) =>
+    setVisibleWidgets((prev) => (prev.includes(key) ? prev : [...prev, key]));
 
   const formatCurrency = (value: number | null) => {
     if (value === null || Number.isNaN(value)) return "--";
@@ -159,7 +174,34 @@ function TradesPage() {
             <h1>Dashboard</h1>
           </div>
           <div className="dash-actions">
-            <button className="pill-btn">Add Widgets</button>
+            <div className="widget-picker">
+              <button className="pill-btn" onClick={() => setWidgetPickerOpen((o) => !o)}>
+                Add Widgets
+              </button>
+              {widgetPickerOpen && (
+                <div className="widget-dropdown">
+                  {availableToAdd.map((w) => (
+                    <button
+                      key={w}
+                      className="widget-dropdown-item"
+                      onClick={() => {
+                        showWidget(w);
+                        setWidgetPickerOpen(false);
+                      }}
+                      >
+                        {w === "chart" && "Stock Chart"}
+                        {w === "recentOrders" && "Recent Orders"}
+                        {w === "leaderboard" && "Leaderboard"}
+                        {w === "portfolio" && "Portfolio"}
+                        {w === "news" && "News"}
+                      </button>
+                    ))}
+                  {availableToAdd.length === 0 && (
+                    <div className="widget-dropdown-empty">All widgets visible</div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -182,148 +224,148 @@ function TradesPage() {
 
         <div className="dash-grid">
           <div className="dash-col">
-            <section className="dash-card chart-card">
-              <div className="card-head">
-                <h3>Stock Chart</h3>
-              </div>
-              <div style={{ height: 320 }}>
-                <PriceChart />
-              </div>
-            </section>
-
-            <section className="dash-card">
-              <div className="card-head">
-                <h3>Recent Orders</h3>
-                <button className="link-button">View All</button>
-              </div>
-              {isAuthenticated ? (
-                <div className="orders-table">
-                  <div className="orders-header">
-                    <span>Instrument</span>
-                    <span>No. of Shares</span>
-                    <span className="text-right">Amount</span>
-                    <span className="text-right">Date</span>
-                  </div>
-                  {ordersError && (
-                    <div className="orders-row" style={{ borderBottom: "none", color: "#b91c1c" }}>
-                      {ordersError}
-                    </div>
-                  )}
-                  {!ordersError && orders.length === 0 && (
-                    <div className="orders-row" style={{ borderBottom: "none" }}>No orders yet.</div>
-                  )}
-                  {!ordersError && orders.length > 0 && orders.map((order) => {
-                    const amount = order.price ? order.price * order.quantity : undefined;
-                    const formattedAmount = amount ? `$${amount.toFixed(2)}` : "—";
-                    const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString() : "—";
-                    return (
-                      <div className="orders-row" key={order.order_id}>
-                        <div>
-                          <div className="order-ticker">{order.symbol}</div>
-                          <div className="order-company" style={{ textTransform: "capitalize" }}>{order.type} • {order.status}</div>
-                        </div>
-                        <div>{order.quantity}</div>
-                        <div className="text-right">{formattedAmount}</div>
-                        <div className="text-right">{dateStr}</div>
-                      </div>
-                    );
-                  })}
+            {visibleWidgets.includes("chart") && (
+              <section className="dash-card chart-card">
+                <div className="card-head">
+                  <h3>Stock Chart</h3>
+                  <button className="widget-close" onClick={() => hideWidget("chart")}>×</button>
                 </div>
-              ) : (
-                <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view recent orders.</div>
-              )}
-            </section>
+                <div style={{ height: 320 }}>
+                  <PriceChart />
+                </div>
+              </section>
+            )}
+
+            {visibleWidgets.includes("recentOrders") && (
+              <section className="dash-card">
+                <div className="card-head">
+                  <h3>Recent Orders</h3>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="link-button" onClick={() => navigate("/transactions")}>View All</button>
+                    <button className="widget-close" onClick={() => hideWidget("recentOrders")}>×</button>
+                  </div>
+                </div>
+                {isAuthenticated ? (
+                  <div className="orders-table">
+                    <div className="orders-header">
+                      <span>Instrument</span>
+                      <span>No. of Shares</span>
+                      <span className="text-right">Amount</span>
+                      <span className="text-right">Date</span>
+                    </div>
+                    {ordersError && (
+                      <div className="orders-row" style={{ borderBottom: "none", color: "#b91c1c" }}>
+                        {ordersError}
+                      </div>
+                    )}
+                    {!ordersError && orders.length === 0 && (
+                      <div className="orders-row" style={{ borderBottom: "none" }}>No orders yet.</div>
+                    )}
+                    {!ordersError && orders.length > 0 && orders.map((order) => {
+                      const amount = order.price ? order.price * order.quantity : undefined;
+                      const formattedAmount = amount ? `$${amount.toFixed(2)}` : "--";
+                      const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString() : "--";
+                      return (
+                        <div className="orders-row" key={order.order_id}>
+                          <div>
+                            <div className="order-ticker">{order.symbol}</div>
+                            <div className="order-company" style={{ textTransform: "capitalize" }}>{order.type}</div>
+                          </div>
+                          <div>{order.quantity}</div>
+                          <div className="text-right">{formattedAmount}</div>
+                          <div className="text-right">{dateStr}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view recent orders.</div>
+                )}
+              </section>
+            )}
           </div>
 
           <div className="dash-col slim">
-            <section className="dash-card">
-              <div className="card-head">
-                <h3>Leaderboard</h3>
-                <button className="link-button">View All</button>
-              </div>
-              <ol className="leaderboard-list">
-                {leaderboard.map((entry, idx) => (
-                  <li key={entry.name}>
-                    <span className="rank">{idx + 1}.</span>
-                    <span className="leader-name">{entry.name}</span>
-                    <span className={entry.positive ? "pos" : "neg"}>{entry.change}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-
-            <section className="dash-card">
-              <div className="card-head">
-                <h3>Portfolio</h3>
-                <button className="link-button">View All</button>
-              </div>
-              {isAuthenticated ? (
-                <div className="portfolio-list">
-                  {portfolioRows.length === 0 ? (
-                    <div className="orders-row" style={{ borderBottom: "none" }}>No positions yet.</div>
-                  ) : (
-                    portfolioRows.map((item) => {
-                      const changePositive = item.pnl >= 0;
-                      return (
-                        <div className="portfolio-row" key={item.symbol}>
-                          <div className="portfolio-ticker">{item.symbol}</div>
-                          <div className={`portfolio-change ${changePositive ? "pos" : "neg"}`}>
-                            {`${changePositive ? "+" : "-"}$${Math.abs(item.pnl).toFixed(2)}`}
-                          </div>
-                          <div className="portfolio-balance">${item.total_position.toFixed(2)}</div>
-                        </div>
-                      );
-                    })
-                  )}
+            {visibleWidgets.includes("leaderboard") && (
+              <section className="dash-card">
+                <div className="card-head">
+                  <h3>Leaderboard</h3>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="link-button">View All</button>
+                    <button className="widget-close" onClick={() => hideWidget("leaderboard")}>×</button>
+                  </div>
                 </div>
-              ) : (
-                <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
-              )}
-            </section>
-
-            <BuySellWidget />
-            <section className="dash-card">
-            <div className="card-head">
-              <h3>Recent News</h3>
-              <button className="link-button">View All</button>
-            </div>
-            {isAuthenticated ? (
-              <>
-                <div className="flex gap-2 mb-6">
-                  {["All", "My Stocks", "Market"].map((label:string) => <>
-                    <button className="px-2 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs font-medium">
-                        {label}
-                    </button>
-                    </>)}
-                </div>
-
-                <div className="space-y-0">
-                  {news.map((n)=> (
-                    <div className="relative pl-4 py-1 mb-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
-                      <div className="absolute left-0 top-0 w-1 h-full bg-green-500 rounded-full"></div>
-                      <div className="flex gap-4">
-                          <div className="flex-1 min-w-0">
-                              <h3 className="text-xs font-semibold text-gray-800 mb-2 leading-tight">
-                                  NOVA shares surge 12% on strong quarterly earnings report
-                              </h3>
-                              <div className="flex items-center gap-2 mb-1">
-                                  <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
-                                      {n.id}
-                                  </span>
-                              </div>
-                            <p className="text-xs text-gray-500">{n.ts_release_ms}</p>
-                        </div>
-                    </div>
-                </div>
+                <ol className="leaderboard-list">
+                  {leaderboard.map((entry, idx) => (
+                    <li key={entry.name}>
+                      <span className="rank">{idx + 1}.</span>
+                      <span className="leader-name">{entry.name}</span>
+                      <span className={entry.positive ? "pos" : "neg"}>{entry.change}</span>
+                    </li>
                   ))}
-              </div>
-            </>
-            ) : (
-                <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your news.</div>
+                </ol>
+              </section>
             )}
 
-             
-          </section>
+            {visibleWidgets.includes("portfolio") && (
+              <section className="dash-card">
+                <div className="card-head">
+                  <h3>Portfolio</h3>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="link-button">View All</button>
+                    <button className="widget-close" onClick={() => hideWidget("portfolio")}>×</button>
+                  </div>
+                </div>
+                {isAuthenticated ? (
+                  <div className="portfolio-list">
+                    {portfolioRows.length === 0 ? (
+                      <div className="orders-row" style={{ borderBottom: "none" }}>No positions yet.</div>
+                    ) : (
+                      portfolioRows.map((item) => {
+                        const changePositive = item.pnl >= 0;
+                        return (
+                          <div className="portfolio-row" key={item.symbol}>
+                            <div className="portfolio-ticker">{item.symbol}</div>
+                            <div className={`portfolio-change ${changePositive ? "pos" : "neg"}`}>
+                              {`${changePositive ? "+" : "-"}$${Math.abs(item.pnl).toFixed(2)}`}
+                            </div>
+                            <div className="portfolio-balance">${item.total_position.toFixed(2)}</div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 14, color: "#6b7280" }}>Log in to view your portfolio.</div>
+                )}
+              </section>
+            )}
+
+            {visibleWidgets.includes("news") && (
+              <section className="dash-card">
+                <div className="card-head">
+                  <h3>News</h3>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="link-button" onClick={() => navigate("/news")}>View All</button>
+                    <button className="widget-close" onClick={() => hideWidget("news")}>×</button>
+                  </div>
+                </div>
+                {newsLoading && <div className="orders-row" style={{ borderBottom: "none" }}>Loading news…</div>}
+                {!newsLoading && news.length === 0 && (
+                  <div className="orders-row" style={{ borderBottom: "none" }}>No news yet.</div>
+                )}
+                {!newsLoading && news.length > 0 && (
+                  <div className="news-widget-list">
+                    {news.slice(0, 4).map((item) => (
+                      <div className="news-widget-item" key={item.id}>
+                        <div className="news-widget-headline">{item.headline}</div>
+                        <div className="news-widget-meta">{new Date(item.ts_release_ms).toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         </div>
       </div>
