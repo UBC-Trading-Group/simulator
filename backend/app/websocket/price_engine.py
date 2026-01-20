@@ -75,10 +75,10 @@ class PriceEngine:
                         broadcast_unit[ticker.id] = price
                 
                 await self.broadcast(broadcast_unit)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.5)  # Broadcast every 0.5 seconds
             except asyncio.CancelledError:
                 self.is_running = False
                 break
             except Exception as e:
                 logger.error(f"Error in price engine: {e}")
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.5)

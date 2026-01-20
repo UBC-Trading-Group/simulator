@@ -59,7 +59,17 @@ class OrderProcessor:
                 "unprocessed_quantity": order.quantity,
             }
         
-        # 4. Check position limits (5000 per ticker)
+        # 4. Check cash requirements for buy orders
+        if order.side.value == "buy":
+            required_cash = order.price * order.quantity
+            if not user_state.has_sufficient_cash(required_cash):
+                return {
+                    "status": "INSUFFICIENT_CASH",
+                    "message": f"Insufficient cash. Required: ${required_cash:.2f}, Available: ${user_state.get_cash():.2f}",
+                    "unprocessed_quantity": order.quantity,
+                }
+        
+        # 5. Check position limits (5000 per ticker)
         if order.side.value == "buy":
             new_position = current_position + order.quantity
         else:  # sell
@@ -78,8 +88,8 @@ class OrderProcessor:
                 "unprocessed_quantity": order.quantity,
             }
 
-        # Process the order
-        processing_status, unprocessed_quantity = self.order_book.match_order(order)
+        # Process the order and get actual execution price
+        processing_status, unprocessed_quantity, avg_execution_price = self.order_book.match_order(order)
         
         # Track this trade for rate limiting
         user_state.add_trade_to_history(order.ticker, order.quantity, order.side.value, current_time)
@@ -88,6 +98,7 @@ class OrderProcessor:
             "status": processing_status,
             "message": "Order processed successfully",
             "unprocessed_quantity": unprocessed_quantity,
+            "execution_price": avg_execution_price if avg_execution_price > 0 else order.price,
         }
 
     def cancel_order(self, order):

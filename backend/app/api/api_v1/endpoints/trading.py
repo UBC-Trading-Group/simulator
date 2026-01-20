@@ -123,6 +123,7 @@ def create_order(
         "ORDER_SIZE_EXCEEDED",
         "RATE_LIMIT_EXCEEDED",
         "REVERSAL_BLOCKED",
+        "INSUFFICIENT_CASH",
     ]
     
     if status_str in error_statuses:
@@ -131,6 +132,9 @@ def create_order(
             detail=result.get("message", "Order rejected"),
         )
 
+    # Use actual execution price if available, otherwise use order price
+    execution_price = result.get("execution_price", order_price)
+    
     return {
         "order_id": str(order.id),
         "user_id": current_user.id,
@@ -138,7 +142,7 @@ def create_order(
         "quantity": order_data.quantity,
         "side": order_data.side.value,
         "order_type": order_data.order_type.value,
-        "price": order_price,
+        "price": execution_price,
         "status": status_str,
         "message": result.get("message", "Order processed"),
         "unprocessed_quantity": result.get("unprocessed_quantity", 0),

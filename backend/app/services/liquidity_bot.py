@@ -99,8 +99,8 @@ class LiquidityBot:
         return max(50 - 10 * level, 10)
 
     def generate_order_book(self, drift_term, levels=3):
-        # Apply random walk to create price noise
-        self.apply_random_walk()
+        # Note: mid_price is now updated externally from GBM (which includes news drift)
+        # Random walk is removed to prevent double-counting price movement
         
         # Compute spread (drift_term should be 0 for liquidity bots)
         spread = self.compute_spread(drift_term)

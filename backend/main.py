@@ -74,7 +74,7 @@ async def startup_event():
     """
     Start news engine to adjust add. drift
     """
-    asyncio.create_task(news_engine.add_news_on_tick())
+    asyncio.create_task(news_engine.run())
 
     """
     Start liquidity bots

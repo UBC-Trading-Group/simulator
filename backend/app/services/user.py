@@ -10,7 +10,7 @@ class UserState:
 
     def __init__(self, user_id):
         self.user_id = user_id
-        self.cash = 0
+        self.cash = 500000.0  # Start with 500k cash
 
         self.portfolio = {}  # contains user's portfolio
         self.unfulfilled_trades = (
@@ -40,7 +40,38 @@ class UserState:
             self.portfolio[order["ticker"]] = []
 
         if order["side"] == "buy":
-            self.portfolio[order["ticker"]].append((order["quantity"], order["price"]))
+            # Check if we have short positions to close first
+            if self.portfolio[order["ticker"]]:
+                # Close short positions first (FIFO)
+                buy_qty = order["quantity"]
+                buy_price = order["price"]
+                lots = self.portfolio[order["ticker"]]
+                
+                while buy_qty > 0 and lots and lots[0][0] < 0:  # Negative qty = short
+                    short_qty, short_price = lots[0]
+                    short_qty = abs(short_qty)  # Make positive for calculation
+                    
+                    if buy_qty >= short_qty:
+                        # Close entire short position
+                        pnl = (short_price - buy_price) * short_qty  # Profit if buy < short
+                        self.total_realized_pnl += pnl
+                        buy_qty -= short_qty
+                        lots.pop(0)
+                    else:
+                        # Partially close short
+                        pnl = (short_price - buy_price) * buy_qty
+                        self.total_realized_pnl += pnl
+                        lots[0] = (-(short_qty - buy_qty), short_price)  # Keep negative
+                        buy_qty = 0
+                        break
+                
+                # If still have buy quantity left, add as long position
+                if buy_qty > 0:
+                    self.portfolio[order["ticker"]].append((buy_qty, buy_price))
+            else:
+                # No positions, just add long
+                self.portfolio[order["ticker"]].append((order["quantity"], order["price"]))
+                
         elif order["side"] == "sell":
             self.sell_shares(order["ticker"], order["quantity"], order["price"])
 
@@ -51,11 +82,7 @@ class UserState:
         remaining = sell_qty
         lots = self.portfolio[ticker]
 
-        if not lots:
-            # TODO update tests to re-enable
-            pass
-            # raise ValueError(f"Ticker {ticker} is not found!")
-
+        # Close long positions first (FIFO)
         while remaining > 0 and lots:
             buy_qty, buy_price = lots[0]
             if remaining >= buy_qty:
@@ -68,12 +95,11 @@ class UserState:
                 remaining = 0
                 break
 
+        # If still have remaining quantity, it's a short sale
+        # Store as negative quantity to track short positions
         if remaining > 0:
-            # TODO update tests to re-enable
-            # raise ValueError(
-            #     f"Not enough shares to sell: tried {sell_qty}, only sold {sell_qty - remaining}"
-            # )
-            pass
+            # Add as negative lot (short position)
+            lots.append((-remaining, sell_price))
 
         self.total_realized_pnl += realized_pnl
 
@@ -159,3 +185,58 @@ class UserState:
             return True
         
         return False
+    
+    def has_sufficient_cash(self, required_amount: float) -> bool:
+        """Check if user has enough cash for a purchase"""
+        return self.cash >= required_amount
+    
+    def get_cash(self) -> float:
+        """Get current cash balance"""
+        return self.cash
+    
+    def calculate_unrealized_pnl(self, current_prices: dict) -> float:
+        """
+        Calculate unrealized P&L based on current market prices.
+        current_prices: dict of {ticker: current_price}
+        Handles both long positions (positive qty) and short positions (negative qty).
+        """
+        unrealized_pnl = 0.0
+        
+        for ticker, lots in self.portfolio.items():
+            if ticker not in current_prices:
+                continue
+            
+            current_price = current_prices[ticker]
+            for qty, entry_price in lots:
+                if qty > 0:
+                    # Long position: profit when price goes up
+                    unrealized_pnl += (current_price - entry_price) * qty
+                else:
+                    # Short position (qty is negative): profit when price goes down
+                    unrealized_pnl += (entry_price - current_price) * abs(qty)
+        
+        return unrealized_pnl
+    
+    def get_portfolio_market_value(self, current_prices: dict) -> float:
+        """
+        Calculate total market value of portfolio.
+        For long positions: current_price * qty
+        For short positions: entry_price * qty - current_price * qty (what you'd need to close)
+        current_prices: dict of {ticker: current_price}
+        """
+        market_value = 0.0
+        
+        for ticker, lots in self.portfolio.items():
+            if ticker not in current_prices:
+                continue
+            
+            current_price = current_prices[ticker]
+            for qty, entry_price in lots:
+                if qty > 0:
+                    # Long: value is current market price
+                    market_value += current_price * qty
+                else:
+                    # Short: value is negative (liability to buy back)
+                    market_value += current_price * qty  # qty is negative, so this subtracts
+        
+        return market_value

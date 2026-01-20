@@ -7,7 +7,7 @@ from app.services.order_book import OrderBook
 
 
 class LiquidityBotManager:
-    def __init__(self, instruments: list[Instrument], order_book: OrderBook):
+    def __init__(self, instruments: list[Instrument], order_book: OrderBook, gbm_manager=None):
         # Maps instrument id to liquidity bot
         self.liquidity_bots = {
             instrument.id: LiquidityBot(
@@ -16,6 +16,7 @@ class LiquidityBotManager:
             for instrument in instruments
         }
         self.order_book = order_book
+        self.gbm_manager = gbm_manager
         # Track liquidity bot orders by ticker with original quantity
         self.liquidity_bot_orders = {}
         # Track original quantities to detect fills
@@ -118,7 +119,13 @@ class LiquidityBotManager:
         while self.is_running:
             try:
                 for ticker, liquidity_bot in self.liquidity_bots.items():
-                    # drift_term = 0 for liquidity bots (they don't respond to news)
+                    # Update liquidity bot mid price from GBM (which includes news drift)
+                    if self.gbm_manager:
+                        gbm_price = self.gbm_manager.get_ticker_current_gbm_price(ticker)
+                        liquidity_bot.adjust_mid_price(gbm_price)
+                    
+                    # drift_term = 0 for liquidity bots (they don't respond to news directly)
+                    # News affects them through GBM price updates above
                     book_snapshot = liquidity_bot.generate_order_book(0)
                     print("Liquidity bot generated snapshot for", ticker)
                     print(book_snapshot)

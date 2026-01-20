@@ -25,8 +25,8 @@ price_engine = PriceEngine(
     instrument_manager=instrument_manager,
 )
 gbm_manager = GBMManager(
-    instrument_manager
-)  # need to be injected to avoid circular dependency
+    instrument_manager, news_engine
+)  # Pass news engine to calculate drift
 order_generator = OrderGenerator(
     instrument_manager=instrument_manager,
     order_book=order_book,
@@ -35,6 +35,7 @@ order_generator = OrderGenerator(
 lb_manager = LiquidityBotManager(
     instruments=instrument_manager.get_all_instruments(),
     order_book=order_book,
+    gbm_manager=gbm_manager,
 )
 
 

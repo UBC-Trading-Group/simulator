@@ -65,7 +65,7 @@ const BuySellWidget: React.FC = () => {
     };
 
     fetchPortfolio();
-    const interval = setInterval(fetchPortfolio, 5000);
+    const interval = setInterval(fetchPortfolio, 1000); // Update every 1 second
     return () => {
       isCancelled = true;
       clearInterval(interval);
@@ -151,7 +151,7 @@ const BuySellWidget: React.FC = () => {
     };
 
     fetchOrderBook();
-    const interval = setInterval(fetchOrderBook, 3000);
+    const interval = setInterval(fetchOrderBook, 500); // Update every 0.5 seconds
     return () => {
       isCancelled = true;
       clearInterval(interval);
@@ -373,7 +373,7 @@ const BuySellWidget: React.FC = () => {
             )}
             {!isLoadingBook && !bookError && orderBook && (
               <span>
-                Mid ${formatPrice(orderBook.mid_price ?? null)} • Bid{' '}
+                Bid{' '}
                 {orderBook.best_bid
                   ? `$${formatPrice(orderBook.best_bid.price)} x ${orderBook.best_bid.quantity}`
                   : '—'}{' '}

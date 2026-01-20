@@ -12,8 +12,13 @@ class GeometricBrownianMotionAssetSimulator:
         self.sigma = math.sqrt(variance)
         self.delta = delta
         self.time = 0.0
+        self.additional_drift = 0.0  # News-based drift
 
         # TODO: store previous prices
+    
+    def set_drift(self, drift: float):
+        """Set additional drift from news events"""
+        self.additional_drift = drift
 
     @staticmethod
     def generate_e():
@@ -21,8 +26,8 @@ class GeometricBrownianMotionAssetSimulator:
 
     def calculate(self):
         e = self.generate_e()
-        # TODO: calculate drift
-        drift = 0
+        # Use additional_drift from news events
+        drift = self.additional_drift
 
         next_price = self.current_price * np.exp(
             (self.mean + drift - self.variance / 2) * self.delta
