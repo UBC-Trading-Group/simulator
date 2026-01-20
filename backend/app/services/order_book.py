@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Set, Tuple
 
 from app.schemas.order import OrderModel, OrderSide, OrderStatus
+from app.services.user import UserState
 
 
 class OrderBook:
@@ -49,6 +50,11 @@ class OrderBook:
         self.trader_mapping: Dict[str, Set[str]] = {}
 
         """
+        User state mapping gives us quick access to user state
+        """
+        self.user_state_mapping: Dict[str, object] = {}
+
+        """
         Gives us quick check if order is fulfilled 
         """
         self.fulfilled_orders: Set[str] = set()
@@ -71,6 +77,36 @@ class OrderBook:
         self.QUANTITY_IDX = 1
         self.ORDER_OBJ_IDX = 2
 
+    def _get_user_state(self, user_id: str) -> UserState:
+        # init user if not exist
+        if user_id not in self.user_state_mapping:
+            self.user_state_mapping[user_id] = UserState(user_id=user_id)
+        return self.user_state_mapping[user_id]
+
+    def _apply_trade_to_user(
+        self,
+        user_id: str,
+        ticker: str,
+        side: OrderSide,
+        quantity: int,
+        price: float,
+    ):
+        user_state = self._get_user_state(user_id)
+
+        trade = {
+            "ticker": ticker,
+            "side": side.value,
+            "quantity": quantity,
+            "price": price,
+        }
+
+        user_state.add_fulfilled_trades(trade)
+
+        if side == OrderSide.BUY:
+            user_state.cash -= quantity * price
+        else:
+            user_state.cash += quantity * price
+
     def _get_book(
         self, ticker: str, side: OrderSide
     ) -> List[Tuple[float, int, OrderModel]]:
@@ -83,6 +119,21 @@ class OrderBook:
             if ticker not in self.sells:
                 self.sells[ticker] = []
             return self.sells[ticker]
+
+    def get_bids(self, ticker: str):
+        return [
+            entry[self.ORDER_OBJ_IDX]
+            for entry in sorted(self.buys.get(ticker, []), key=lambda x: -x[0])
+        ]
+
+    def get_asks(self, ticker: str):
+        return [
+            entry[self.ORDER_OBJ_IDX]
+            for entry in sorted(self.sells.get(ticker, []), key=lambda x: x[0])
+        ]
+
+    def has_ticker(self, ticker: str) -> bool:
+        return ticker in self.buys or ticker in self.sells
 
     def _add_order_to_trader_mapping(self, order: OrderModel):
         user_id = order.user_id
@@ -126,6 +177,27 @@ class OrderBook:
                 else:
                     portfolio[current_order.ticker] -= current_order.quantity
         return portfolio
+
+    def get_trader_orders_with_status(self, user_id: str) -> List[dict]:
+        """Return all orders for a trader with a simple open/filled status."""
+        orders: List[dict] = []
+        for order_id in self._get_trader_orders(user_id):
+            if order_id not in self.order_mapping:
+                continue
+            order = self.order_mapping[order_id]
+            status = "filled" if order_id in self.fulfilled_orders else "open"
+            orders.append(
+                {
+                    "order_id": str(order.id),
+                    "symbol": order.ticker,
+                    "quantity": order.quantity,
+                    "price": order.price,
+                    "type": order.side.value,
+                    "status": status,
+                }
+            )
+        # Keep newest-like ordering by ID insertion (UUID has no time ordering). Return as-is.
+        return orders
 
     def check_order_status(self, order: OrderModel) -> OrderStatus:
         # Check if the order was fulfiled
@@ -336,6 +408,24 @@ class OrderBook:
 
             self.last_traded_price[ticker] = trade_price
 
+            # Apply trade to user (USER STATE)
+            self._apply_trade_to_user(
+                user_id=order.user_id,
+                ticker=ticker,
+                side=order.side,
+                quantity=traded_qty,
+                price=trade_price,
+            )
+
+            # Apply trade to opposite user (USER STATE)
+            self._apply_trade_to_user(
+                user_id=opp_order.user_id,
+                ticker=ticker,
+                side=opp_order.side,
+                quantity=traded_qty,
+                price=trade_price,
+            )
+
             opp_order.quantity -= traded_qty
             quantity -= traded_qty
 
@@ -350,11 +440,15 @@ class OrderBook:
         if quantity == initial_quantity:
             # Nothing matched
             self.add_order(order)
+            # Add to user's unfulfilled trades
+            self._get_user_state(order.user_id).add_unfulfilled_trade(order)
             return OrderStatus.OPEN, initial_quantity
         elif quantity > 0:
             # Partially matched
             order.quantity = quantity
             self.add_order(order)
+            # Add to user's unfulfilled trades
+            self._get_user_state(order.user_id).add_unfulfilled_trade(order)
             return OrderStatus.PARTIALLY_FILLED, quantity
         else:
             # Fully matched

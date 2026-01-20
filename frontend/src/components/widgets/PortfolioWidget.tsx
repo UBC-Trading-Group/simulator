@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { getApiBaseUrl } from '../../config/api';
 
 interface Position {
   symbol: string;
@@ -20,8 +21,6 @@ interface PortfolioData {
   positions: Position[];
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
-
 function PortfolioWidget() {
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +36,7 @@ function PortfolioWidget() {
 
     const fetchPortfolio = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/portfolio/`, {
+        const response = await fetch(`${getApiBaseUrl()}/portfolio/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

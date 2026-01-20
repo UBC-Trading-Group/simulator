@@ -1,14 +1,30 @@
+import { useState } from "react";
+import { useOrderbook } from "../../hooks/useOrderbook";
 
-export default function OrderBook() {
+interface Props {
+  defaultTicker?: string;
+  quickTickers?: string[];
+}
 
-  const orders = [
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-    { name: 'TRAX', company: 'Traxline Logistics', quantity: 20, price: 420.84 },
-  ];
+export default function OrderBook({
+  defaultTicker = "NOVA",
+  quickTickers = [],
+}: Props) {
+  const [search, setSearch] = useState(defaultTicker);
+  const [activeTicker, setActiveTicker] = useState(defaultTicker);
+  const { bids, asks, isError, isLoading, ticker } = useOrderbook(activeTicker);
+
+  const handleApplyFilter = () => {
+    const next = search.trim();
+    if (next) {
+      setActiveTicker(next.toUpperCase());
+    }
+  };
+
+  const handleQuickSelect = (t: string) => {
+    setSearch(t);
+    setActiveTicker(t);
+  };
 
   return (
     <div>
@@ -16,26 +32,65 @@ export default function OrderBook() {
         {/* Search and Filters */}
         <div className="flex items-center gap-3 mb-4 shrink-0">
           <div className="flex-1 relative">
-            <svg className="w-5 h-5 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="w-5 h-5 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search Order Book"
+              value={search}
+              onChange={(e) => setSearch(e.target.value.toUpperCase())}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-text-2 focus:border-transparent"
             />
           </div>
-          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
-            <span>×</span>
-            <span>TRAX</span>
-          </button>
-          <button className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
+          <button
+            className="px-4 py-2.5 bg-tg-brightred hover:opacity-90 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+            onClick={handleApplyFilter}
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
             </svg>
-            <span>Filters</span>
+            <span>Apply</span>
           </button>
         </div>
+
+        {quickTickers.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {quickTickers.map((t) => (
+              <button
+                key={t}
+                onClick={() => handleQuickSelect(t)}
+                className={`px-3 py-1.5 rounded-md text-sm font-semibold border ${
+                  t === activeTicker
+                    ? "bg-tg-brightred text-white border-tg-brightred"
+                    : "bg-white text-gray-700 border-gray-200"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isError && bids.length === 0 && asks.length === 0 && (
+          <div className="text-red-500 mb-4 pl-1">Ticker "{ticker}" not found.</div>
+        )}
+        {isLoading && <div className="text-gray-500 mb-4 pl-1">Loading order book...</div>}
 
         {/* Order Book Table */}
         <div className="bg-white dark:bg-dark-2 rounded-lg shadow-sm dark:shadow-none border border-gray-200 dark:border-ui  flex flex-col flex-1">
@@ -63,65 +118,67 @@ export default function OrderBook() {
           </div>
 
           {/* Scrollable Order Rows */}
-          <div className="grid grid-cols-2 overflow-y-auto flex-1">
+          <div className="grid grid-cols-2 h-64 overflow-y-auto flex-1">
             {/* BID Side */}
-            <div className="bg-white dark:bg-dark-2">
-              {orders.map((order, index) => (
-                <div 
-                  key={`bid-${index}`}
-                  className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125 transition-colors"
-                >
-                  <div className="grid grid-cols-3 gap-4 items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.name}</span>
+            <div className="bg-white dark:bg-dark-2 h-72 overflow-y-scroll custom-scrollbar">
+              {bids.length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No bids yet</div>
+              ) : (
+                bids.map((order, index) => (
+                  <div
+                    key={`bid-${index}`}
+                    className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125 transition-colors"
+                  >
+                    <div className="grid grid-cols-3 gap-4 items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.ticker}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.ticker}</div>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.name}</div>
-                        <div className="text-gray-400 text-xs truncate">{order.company}</div>
+                      <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
+                        {order.quantity}
                       </div>
-                    </div>
-                    <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
-                      {order.quantity}
-                    </div>
-                    <div className="text-green-600 text-right font-semibold">
-                      ${order.price.toFixed(2)}
+                      <div className="text-green-600 text-right font-semibold">${order.price.toFixed(2)}</div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             {/* ASK Side */}
-            <div className="bg-white dark:bg-dark-2 border-l border-gray-200 dark:border-ui">
-              {orders.map((order, index) => (
-                <div 
-                  key={`ask-${index}`}
-                  className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125  transition-colors"
-                >
-                  <div className="grid grid-cols-3 gap-4 items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.name}</span>
+            <div className="bg-white dark:bg-dark-2 border-l border-gray-200 dark:border-ui h-72 overflow-y-scroll custom-scrollbar">
+              {asks.length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-400 dark:text-gray-500">No asks yet</div>
+              ) : (
+                asks.map((order, index) => (
+                  <div
+                    key={`ask-${index}`}
+                    className="px-6 py-4 border-b border-gray-100 dark:border-ui hover:backdrop-brightness-75 dark:hover:backdrop-brightness-125  transition-colors"
+                  >
+                    <div className="grid grid-cols-3 gap-4 items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center shrink-0">
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{order.ticker}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.ticker}</div>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-gray-900 dark:text-white font-semibold text-sm">{order.name}</div>
-                        <div className="text-gray-400 text-xs truncate">{order.company}</div>
+                      <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
+                        {order.quantity}
                       </div>
-                    </div>
-                    <div className="text-gray-600 dark:text-white text-center font-medium text-sm">
-                      {order.quantity}
-                    </div>
-                    <div className="text-red-500 text-right font-semibold">
-                      ${order.price.toFixed(2)}
+                      <div className="text-red-500 text-right font-semibold">${order.price.toFixed(2)}</div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-};
+}

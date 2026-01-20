@@ -1,0 +1,9 @@
+{
+  "app": "python app.py",
+  "context": {
+    "@aws-cdk/core:bootstrapQualifier": "simulator",
+    "@aws-cdk/core:stackRelativeExports": true
+  }
+}
+
+

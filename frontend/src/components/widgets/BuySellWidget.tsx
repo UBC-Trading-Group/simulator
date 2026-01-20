@@ -1,17 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebSocketContext } from '../../contexts/WebSocketContext';
+import { getApiBaseUrl } from '../../config/api';
 import { focusStyles, palette, widgetStyles } from './buySellStyles';
 import {
   formatPrice,
   isValidPrice,
   isValidQuantity,
+} from './tradeHelpers';
+import type {
   OrderBookSnapshot,
   PortfolioPosition,
 } from './tradeHelpers';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 const BuySellWidget: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
@@ -43,7 +43,7 @@ const BuySellWidget: React.FC = () => {
 
     const fetchPortfolio = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/portfolio/`, {
+        const response = await fetch(`${getApiBaseUrl()}/portfolio/`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ const BuySellWidget: React.FC = () => {
       setBookError(null);
       try {
         const response = await fetch(
-          `${API_BASE_URL}/trading/orderbook/${selectedTicker}`,
+          `${getApiBaseUrl()}/trading/orderbook/${selectedTicker}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -212,7 +212,7 @@ const BuySellWidget: React.FC = () => {
     setSuccess(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/trading/orders`, {
+      const response = await fetch(`${getApiBaseUrl()}/trading/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,7 +264,7 @@ const BuySellWidget: React.FC = () => {
     setSuccess(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/trading/orders`, {
+      const response = await fetch(`${getApiBaseUrl()}/trading/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
