@@ -122,8 +122,6 @@ class TestOrderBook(TestCase):
         self.assertEqual(len(self.order_book.buys.get("AAPL", [])), 0)
         self.assertEqual(self.order_book.sells["AAPL"][0][2].quantity, 3)
 
-
-
     def test_order_matching_no_match(self):
         """Test order matching when no match is possible"""
         self.order_book.add_order(self.sell_order_103)
@@ -132,7 +130,6 @@ class TestOrderBook(TestCase):
             price=100, quantity=5, ticker="AAPL", user_id="u1", side=OrderSide.BUY
         )
         status, remaining_qty, avg_price = self.order_book.match_order(buy_order)
-
 
         self.assertEqual(avg_price, 0.0)
         self.assertEqual(status, OrderStatus.OPEN)

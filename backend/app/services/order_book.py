@@ -43,7 +43,7 @@ class OrderBook:
         Order mapping gives us quick access if we have order id 
         """
         self.order_mapping: Dict[str, OrderModel] = {}
-        
+
         """
         All orders ever placed (for history tracking)
         """
@@ -140,7 +140,9 @@ class OrderBook:
     def has_ticker(self, ticker: str) -> bool:
         return ticker in self.buys or ticker in self.sells
 
-    def _add_order_to_trader_mapping(self, order: OrderModel, execution_price: float = None):
+    def _add_order_to_trader_mapping(
+        self, order: OrderModel, execution_price: float = None
+    ):
         user_id = order.user_id
         if user_id not in self.trader_mapping:
             self.trader_mapping[user_id] = set()
@@ -204,7 +206,7 @@ class OrderBook:
             if order_id not in self.all_orders:
                 continue
             original_order = self.all_orders[order_id]
-            
+
             # Determine status
             if order_id in self.fulfilled_orders:
                 status = "filled"
@@ -219,7 +221,7 @@ class OrderBook:
             else:
                 # Order no longer in book but not in fulfilled - probably cancelled
                 continue
-            
+
             orders.append(
                 {
                     "order_id": str(original_order.id),
@@ -229,7 +231,11 @@ class OrderBook:
                     "price": original_order.price,
                     "type": original_order.side.value,
                     "status": status,
-                    "created_at": original_order.created_at.isoformat() if hasattr(original_order, 'created_at') else None,
+                    "created_at": (
+                        original_order.created_at.isoformat()
+                        if hasattr(original_order, "created_at")
+                        else None
+                    ),
                 }
             )
         # Sort by timestamp, newest first
@@ -412,9 +418,9 @@ class OrderBook:
         ticker = order.ticker
         quantity = order.quantity
         initial_quantity = quantity
-        
+
         # Will track order after we know execution price
-        
+
         # Track total cost for weighted average price calculation
         total_cost = 0.0
         filled_quantity = 0
@@ -450,7 +456,7 @@ class OrderBook:
             trade_price = opp_order.price
 
             self.last_traded_price[ticker] = trade_price
-            
+
             # Track for average execution price
             total_cost += traded_qty * trade_price
             filled_quantity += traded_qty
@@ -488,7 +494,9 @@ class OrderBook:
 
         # Track order with execution price (for non-liquidity bots)
         if not is_liquidity_bot:
-            self._add_order_to_trader_mapping(order, avg_price if avg_price > 0 else order.price)
+            self._add_order_to_trader_mapping(
+                order, avg_price if avg_price > 0 else order.price
+            )
 
         # Handle the remaining quantities (if any)
         if quantity == initial_quantity:

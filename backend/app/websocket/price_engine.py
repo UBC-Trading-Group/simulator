@@ -57,23 +57,23 @@ class PriceEngine:
                 for ticker in self.instrument_manager.get_all_instruments():
                     # Try mid price first
                     price = self.order_book.mid_price(ticker.id)
-                    
+
                     # Fallback to best bid/ask if mid price not available
                     if price is None:
                         best_bid = self.order_book.best_bid(ticker.id)
                         best_ask = self.order_book.best_ask(ticker.id)
-                        
+
                         if best_bid and best_ask:
                             price = (best_bid.price + best_ask.price) / 2
                         elif best_bid:
                             price = best_bid.price
                         elif best_ask:
                             price = best_ask.price
-                    
+
                     # Only include if we have a valid price
                     if price is not None:
                         broadcast_unit[ticker.id] = price
-                
+
                 await self.broadcast(broadcast_unit)
                 await asyncio.sleep(0.5)  # Broadcast every 0.5 seconds
             except asyncio.CancelledError:

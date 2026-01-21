@@ -77,7 +77,7 @@ def create_order(
         # Market order: use aggressive pricing to sweep through all available liquidity
         best_bid = order_book.best_bid(order_data.symbol)
         best_ask = order_book.best_ask(order_data.symbol)
-        
+
         if order_data.side == OrderSide.BUY:
             # For market buy: use a very high price to match all available asks
             if not best_ask:
@@ -115,7 +115,7 @@ def create_order(
         status_str = status_value.value
     else:
         status_str = str(status_value)
-    
+
     # Check for various errors and return appropriate HTTP responses
     error_statuses = [
         "POSITION_LIMIT_EXCEEDED",
@@ -125,7 +125,7 @@ def create_order(
         "REVERSAL_BLOCKED",
         "INSUFFICIENT_CASH",
     ]
-    
+
     if status_str in error_statuses:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -134,7 +134,7 @@ def create_order(
 
     # Use actual execution price if available, otherwise use order price
     execution_price = result.get("execution_price", order_price)
-    
+
     return {
         "order_id": str(order.id),
         "user_id": current_user.id,
