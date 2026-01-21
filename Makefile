@@ -46,7 +46,7 @@ populate: ## Populate database tables with initial data
 db-reset: ## Reset the database (WARNING: This will delete all data)
 	docker-compose down -v
 	docker-compose up -d db
-	@timeout 5 || true
+	@sleep 5
 	docker-compose exec api uv run alembic upgrade head
 
 # Application commands
@@ -81,7 +81,7 @@ dev: ## Start development environment
 	@echo "1. Building and starting services..."
 	docker-compose up --build -d
 	@echo "2. Waiting for services to be ready..."
-	@timeout 10 || true
+	@sleep 10
 	@echo "3. Running database migrations..."
 	docker-compose exec api uv run alembic upgrade head
 	@echo "4. Development environment ready!"
