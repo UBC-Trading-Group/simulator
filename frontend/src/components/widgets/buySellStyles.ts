@@ -140,8 +140,32 @@ export const widgetStyles = {
     transform: isHovered ? 'translateY(-1px)' : 'none',
     boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
   } as React.CSSProperties),
+ 
+  toggleContainer: {
+    display: 'flex',
+    background: '#F3F4FB',
+    borderRadius: 10,
+    padding: '4px',
+    gap: 4,
+  } as React.CSSProperties,
 
-  limitButton: (isHovered?: boolean) => ({
+  toggleButton: (isActive: boolean, side: 'buy' | 'sell') => ({
+    flex: 1,
+    padding: '6px 12px',
+    fontSize: 12,
+    fontWeight: 700,
+    borderRadius: 8,
+    cursor: 'pointer',
+    border: 'none',
+    transition: 'all 0.2s ease',
+    background: isActive 
+      ? (side === 'buy' ? palette.marketBuy : palette.marketSell)
+      : 'transparent',
+    color: isActive ? '#FFFFFF' : '#9CA3AF',
+    boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+  } as React.CSSProperties),
+
+  limitButton: (side: 'buy' | 'sell', isHovered?: boolean) => ({
     width: '100%',
     padding: '12px 20px',
     fontSize: 13,
@@ -149,13 +173,17 @@ export const widgetStyles = {
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: '#FFFFFF',
-    background: isHovered ? palette.brandRedHover : palette.brandRed,
+    background: side === 'buy'
+      ? (isHovered ? palette.marketBuyHover : palette.marketBuy)
+      : (isHovered ? palette.marketSellHover : palette.marketSell),
     border: 'none',
     borderRadius: 10,
     cursor: 'pointer',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     transform: isHovered ? 'translateY(-1px)' : 'none',
-    boxShadow: isHovered ? '0 4px 12px rgba(137, 39, 54, 0.2)' : 'none',
+    boxShadow: isHovered 
+      ? `0 4px 12px ${side === 'buy' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}` 
+      : 'none',
   } as React.CSSProperties),
 
   divider: {

@@ -20,6 +20,7 @@ const BuySellWidget: React.FC = () => {
   const [selectedTicker, setSelectedTicker] = useState<string>('');
   const [quantity, setQuantity] = useState<string>('12');
   const [limitPrice, setLimitPrice] = useState<string>('0');
+  const [limitSide, setLimitSide] = useState<'buy' | 'sell'>('buy');
   const [hasUserEditedLimit, setHasUserEditedLimit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -251,7 +252,7 @@ const BuySellWidget: React.FC = () => {
         body: JSON.stringify({
           symbol: selectedTicker,
           quantity: parseInt(quantity, 10),
-          side: 'buy',
+          side: limitSide,
           order_type: 'limit',
           price: parseFloat(limitPrice),
         }),
@@ -264,7 +265,7 @@ const BuySellWidget: React.FC = () => {
 
       const data = await response.json();
       setSuccess(
-        `Limit order placed: ${quantity} ${selectedTicker} @ $${data.price?.toFixed(2) || limitPrice}`
+        `Limit order placed: ${limitSide.toUpperCase()} ${quantity} ${selectedTicker} @ $${data.price?.toFixed(2) || limitPrice}`
       );
     } catch (err) {
       setError(
@@ -439,7 +440,23 @@ const BuySellWidget: React.FC = () => {
 
       {/* Limit order */}
       <section style={widgetStyles.section}>
-        <h3 style={widgetStyles.sectionTitle}>Place Limit Order</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={widgetStyles.sectionTitle}>Limit Order</h3>
+          <div style={widgetStyles.toggleContainer}>
+            <button
+              onClick={() => setLimitSide('buy')}
+              style={widgetStyles.toggleButton(limitSide === 'buy', 'buy')}
+            >
+              BUY
+            </button>
+            <button
+              onClick={() => setLimitSide('sell')}
+              style={widgetStyles.toggleButton(limitSide === 'sell', 'sell')}
+            >
+              SELL
+            </button>
+          </div>
+        </div>
 
         <div style={widgetStyles.fieldGroup}>
           <span style={widgetStyles.label}>Quantity</span>
@@ -500,7 +517,7 @@ const BuySellWidget: React.FC = () => {
             !isAuthenticated
           }
           style={{
-            ...widgetStyles.limitButton(hoverLimit),
+            ...widgetStyles.limitButton(limitSide, hoverLimit),
             opacity:
               !isValidQuantity(quantity) ||
                 !isValidPrice(limitPrice) ||
@@ -510,7 +527,7 @@ const BuySellWidget: React.FC = () => {
                 : 1,
           }}
         >
-          {isSubmitting ? 'Placing Order...' : 'Place Limit Order'}
+          {isSubmitting ? 'Placing Order...' : `PLACE ${limitSide.toUpperCase()} LIMIT`}
         </button>
       </section>
     </div>

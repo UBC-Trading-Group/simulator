@@ -39,6 +39,11 @@ services:
         condition: service_started
     environment:
       - DATABASE_URL=postgresql://sim:sim@db:5432/simdb
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=simdb
+      - DB_USERNAME=sim
+      - DB_PASSWORD=sim
       - REDIS_URL=redis://redis:6379
 
   redis:
