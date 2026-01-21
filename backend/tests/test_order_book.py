@@ -91,8 +91,9 @@ class TestOrderBook(TestCase):
         buy_order = OrderModel(
             price=103, quantity=15, ticker="AAPL", user_id="u1", side=OrderSide.BUY
         )
-        status, remaining_qty = self.order_book.match_order(buy_order)
+        status, remaining_qty, avg_price = self.order_book.match_order(buy_order)
 
+        self.assertEqual(avg_price, 102.0)
         self.assertEqual(status, OrderStatus.PARTIALLY_FILLED)
         self.assertEqual(remaining_qty, 7)
 
@@ -110,14 +111,18 @@ class TestOrderBook(TestCase):
         buy_order = OrderModel(
             price=103, quantity=5, ticker="AAPL", user_id="u1", side=OrderSide.BUY
         )
-        status, remaining_qty = self.order_book.match_order(buy_order)
+        status, remaining_qty, avg_price = self.order_book.match_order(buy_order)
 
+        # The trade happens at 102 as expected
+        self.assertEqual(avg_price, 102.0)
         self.assertEqual(status, OrderStatus.FILLED)
         self.assertEqual(remaining_qty, 0)
 
         self.assertEqual(len(self.order_book.sells["AAPL"]), 1)
         self.assertEqual(len(self.order_book.buys.get("AAPL", [])), 0)
         self.assertEqual(self.order_book.sells["AAPL"][0][2].quantity, 3)
+
+
 
     def test_order_matching_no_match(self):
         """Test order matching when no match is possible"""
@@ -126,8 +131,10 @@ class TestOrderBook(TestCase):
         buy_order = OrderModel(
             price=100, quantity=5, ticker="AAPL", user_id="u1", side=OrderSide.BUY
         )
-        status, remaining_qty = self.order_book.match_order(buy_order)
+        status, remaining_qty, avg_price = self.order_book.match_order(buy_order)
 
+
+        self.assertEqual(avg_price, 0.0)
         self.assertEqual(status, OrderStatus.OPEN)
         self.assertEqual(remaining_qty, 5)
         self.assertEqual(len(self.order_book.buys["AAPL"]), 1)
@@ -169,10 +176,11 @@ class TestOrderBook(TestCase):
         buy_order = OrderModel(
             price=103, quantity=7, ticker="AAPL", user_id="u3", side=OrderSide.BUY
         )
-        status, remaining_qty = self.order_book.match_order(buy_order)
+        status, remaining_qty, avg_price = self.order_book.match_order(buy_order)
 
         self.assertEqual(status, OrderStatus.FILLED)
         self.assertEqual(remaining_qty, 0)
+        self.assertAlmostEqual(avg_price, 101.5714, places=4)
 
         # After match, one sell order remains with quantity 1
         remaining_sells = [o[2] for o in self.order_book.sells["AAPL"]]
