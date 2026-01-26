@@ -46,6 +46,18 @@ services:
       - DB_PASSWORD=sim
       - REDIS_URL=redis://redis:6379
 
+  k6:
+    image: grafana/k6:0.49.0
+    profiles: ["test"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - BASE_URL=http://localhost:8000
+    volumes:
+      - ./k6:/scripts:ro
+    command: ["run", "/scripts/health-smoke.js"]
+
   redis:
     image: redis:7
     ports:
