@@ -5,7 +5,7 @@ import { check, sleep } from 'k6';
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
 
 export const options = {
-  vus: 5,
+  vus: 100,
   duration: '30s',
   thresholds: {
     http_req_failed: ['rate<0.01'], // less than 1% errors
