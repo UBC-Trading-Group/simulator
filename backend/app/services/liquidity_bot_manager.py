@@ -7,7 +7,9 @@ from app.services.order_book import OrderBook
 
 
 class LiquidityBotManager:
-    def __init__(self, instruments: list[Instrument], order_book: OrderBook, gbm_manager=None):
+    def __init__(
+        self, instruments: list[Instrument], order_book: OrderBook, gbm_manager=None
+    ):
         # Maps instrument id to liquidity bot
         self.liquidity_bots = {
             instrument.id: LiquidityBot(
@@ -29,30 +31,34 @@ class LiquidityBotManager:
         """
         if ticker not in self.liquidity_bot_orders:
             return
-        
+
         liquidity_bot = self.liquidity_bots.get(ticker)
         if not liquidity_bot:
             return
-        
+
         for order in self.liquidity_bot_orders[ticker]:
             original_qty = self.original_quantities.get(order.id, order.quantity)
-            
+
             # Check if order still exists in order book (might be filled)
             if order.id in self.order_book.order_mapping:
                 current_order = self.order_book.order_mapping[order.id]
                 filled_quantity = original_qty - current_order.quantity
-                
+
                 if filled_quantity > 0:
                     # Order was partially or fully filled
                     if order.side == OrderSide.BUY:
                         # Bot bought (inventory increases)
                         liquidity_bot.update_inventory(filled_quantity)
-                        print(f"[{ticker}] Bot bought {filled_quantity} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}")
+                        print(
+                            f"[{ticker}] Bot bought {filled_quantity} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}"
+                        )
                     else:
                         # Bot sold (inventory decreases)
                         liquidity_bot.update_inventory(-filled_quantity)
-                        print(f"[{ticker}] Bot sold {filled_quantity} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}")
-                
+                        print(
+                            f"[{ticker}] Bot sold {filled_quantity} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}"
+                        )
+
                 # Remove the order
                 try:
                     self.order_book.remove_order(order)
@@ -62,23 +68,27 @@ class LiquidityBotManager:
                 # Order was fully filled and removed
                 if order.side == OrderSide.BUY:
                     liquidity_bot.update_inventory(original_qty)
-                    print(f"[{ticker}] Bot bought {original_qty} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}")
+                    print(
+                        f"[{ticker}] Bot bought {original_qty} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}"
+                    )
                 else:
                     liquidity_bot.update_inventory(-original_qty)
-                    print(f"[{ticker}] Bot sold {original_qty} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}")
-            
+                    print(
+                        f"[{ticker}] Bot sold {original_qty} @ {order.price:.2f}, inventory now: {liquidity_bot.inventory}"
+                    )
+
             # Clean up tracked quantity
             if order.id in self.original_quantities:
                 del self.original_quantities[order.id]
-        
+
         self.liquidity_bot_orders[ticker] = []
 
     def process_book_snapshot(self, snapshot: dict):
         ticker = snapshot["instrumentId"]
-        
+
         # Clear old liquidity bot orders for this ticker
         self.clear_old_liquidity_orders(ticker)
-        
+
         # Add new orders using is_liquidity_bot=True to prevent matching
         for bid_price, depth in snapshot["bids"]:
             order = OrderModel(
@@ -90,13 +100,13 @@ class LiquidityBotManager:
             )
             # Use is_liquidity_bot=True to add directly to book without matching
             self.order_book.match_order(order, is_liquidity_bot=True)
-            
+
             # Track this order and its original quantity
             if ticker not in self.liquidity_bot_orders:
                 self.liquidity_bot_orders[ticker] = []
             self.liquidity_bot_orders[ticker].append(order)
             self.original_quantities[order.id] = depth
-            
+
         for ask_price, depth in snapshot["asks"]:
             order = OrderModel(
                 price=ask_price,
@@ -107,7 +117,7 @@ class LiquidityBotManager:
             )
             # Use is_liquidity_bot=True to add directly to book without matching
             self.order_book.match_order(order, is_liquidity_bot=True)
-            
+
             # Track this order and its original quantity
             if ticker not in self.liquidity_bot_orders:
                 self.liquidity_bot_orders[ticker] = []
@@ -121,9 +131,11 @@ class LiquidityBotManager:
                 for ticker, liquidity_bot in self.liquidity_bots.items():
                     # Update liquidity bot mid price from GBM (which includes news drift)
                     if self.gbm_manager:
-                        gbm_price = self.gbm_manager.get_ticker_current_gbm_price(ticker)
+                        gbm_price = self.gbm_manager.get_ticker_current_gbm_price(
+                            ticker
+                        )
                         liquidity_bot.adjust_mid_price(gbm_price)
-                    
+
                     # drift_term = 0 for liquidity bots (they don't respond to news directly)
                     # News affects them through GBM price updates above
                     book_snapshot = liquidity_bot.generate_order_book(0)

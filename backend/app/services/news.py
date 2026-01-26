@@ -16,12 +16,14 @@ class NewsShockSimulator:
     def __init__(self):
         self.news_objects: List[NewsEvent] = []
         self.active_news_ids: Set[int] = set()
-        self.activated_news_ids: Set[int] = set()  # Track which news have been activated already
-        
+        self.activated_news_ids: Set[int] = (
+            set()
+        )  # Track which news have been activated already
+
         # Simulation clock (in milliseconds)
         self.sim_time_ms = 0
         self.sim_start_time = time.time()  # Real-world time when simulation started
-        
+
         # Cache for news factor relationships
         self.news_factor_map = {}  # {news_id: [factor_ids]}
         self.instrument_factor_betas = {}  # {(instrument_id, factor_id): beta}
@@ -34,12 +36,12 @@ class NewsShockSimulator:
         with Session(engine) as session:
             result = session.exec(select(NewsEvent))
             self.news_objects = result.all()
-    
+
     def load_factor_relationships(self):
         """Load news-factor and instrument-factor relationships"""
-        from app.models.news_event_factor import NewsEventFactor
         from app.models.instrument_factor_exposure import InstrumentFactorExposure
-        
+        from app.models.news_event_factor import NewsEventFactor
+
         with Session(engine) as session:
             # Load news -> factors
             news_factors = session.exec(select(NewsEventFactor)).all()
@@ -47,14 +49,18 @@ class NewsShockSimulator:
                 if nf.news_event_id not in self.news_factor_map:
                     self.news_factor_map[nf.news_event_id] = []
                 self.news_factor_map[nf.news_event_id].append(nf.factor_id)
-            
+
             # Load instrument -> factor betas
             inst_factors = session.exec(select(InstrumentFactorExposure)).all()
             for ife in inst_factors:
-                self.instrument_factor_betas[(ife.instrument_id, ife.factor_id)] = ife.beta
-            
+                self.instrument_factor_betas[(ife.instrument_id, ife.factor_id)] = (
+                    ife.beta
+                )
+
             logger.info(f"Loaded {len(self.news_factor_map)} news factor mappings")
-            logger.info(f"Loaded {len(self.instrument_factor_betas)} instrument factor betas")
+            logger.info(
+                f"Loaded {len(self.instrument_factor_betas)} instrument factor betas"
+            )
 
     def get_all_news(self):
         return self.news_objects
@@ -88,7 +94,7 @@ class NewsShockSimulator:
             # Use simulation time for decay calculation
             t0_s = news.ts_release_ms / 1000
             sim_time_s = self.sim_time_ms / 1000
-            
+
             # News hasn't been released yet
             if sim_time_s < t0_s:
                 return 0.0
@@ -120,32 +126,32 @@ class NewsShockSimulator:
             total_eff += self.calculate(news_object)
 
         return total_eff
-    
+
     def get_instrument_drift(self, instrument_id: str) -> float:
         """
         Calculate drift for a specific instrument based on active news.
         Drift = sum(news_effect * beta) for all active news and factors.
         """
         total_drift = 0.0
-        
+
         for news in self.news_objects:
             # Skip inactive news
             if news.id not in self.active_news_ids:
                 continue
-            
+
             # Get news effect (decays over time)
             news_effect = self.calculate(news)
             if news_effect == 0:
                 continue
-            
+
             # Get factors affected by this news
             affected_factors = self.news_factor_map.get(news.id, [])
-            
+
             # For each factor, apply instrument's beta exposure
             for factor_id in affected_factors:
                 beta = self.instrument_factor_betas.get((instrument_id, factor_id), 0.0)
                 total_drift += news_effect * beta
-        
+
         return total_drift
 
     def add_news_ad_hoc(self, news_object: Optional[NewsEvent]):
@@ -163,24 +169,26 @@ class NewsShockSimulator:
         """Update simulation time based on real elapsed time"""
         elapsed_real_seconds = time.time() - self.sim_start_time
         self.sim_time_ms = int(elapsed_real_seconds * 1000)
-    
+
     def check_and_activate_news(self):
         """Check if any news should be activated at current simulation time"""
         self.update_simulation_time()
-        
+
         # Group candidates by their release time
         candidates = self.get_candidate_news()
         if not candidates:
             return None
-        
+
         # Group by time bucket (every 100 seconds)
         time_buckets = {}
         for news in candidates:
-            bucket = (news.ts_release_ms // 100000) * 100000  # Round down to nearest 100s
+            bucket = (
+                news.ts_release_ms // 100000
+            ) * 100000  # Round down to nearest 100s
             if bucket not in time_buckets:
                 time_buckets[bucket] = []
             time_buckets[bucket].append(news)
-        
+
         # Activate one random news from each time bucket that's passed
         activated = []
         for bucket_time, bucket_news in time_buckets.items():
@@ -191,15 +199,17 @@ class NewsShockSimulator:
                 self.active_news_ids.add(selected.id)
                 self.activated_news_ids.add(selected.id)
                 activated.append(selected)
-                logger.info(f"Activated news {selected.id}: {selected.headline} (sim_time: {self.sim_time_ms}ms)")
-        
+                logger.info(
+                    f"Activated news {selected.id}: {selected.headline} (sim_time: {self.sim_time_ms}ms)"
+                )
+
         return activated
 
     async def run(self):
         """Main loop that checks for news activation every second"""
         self.is_running = True
         logger.info("News engine started")
-        
+
         while self.is_running:
             try:
                 self.check_and_activate_news()
